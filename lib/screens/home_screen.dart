@@ -431,7 +431,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     (_dailyMacros?['macros']['carbs'] as num?)
                                         ?.toDouble() ??
                                     0.0,
-                                color: Colors.orange,
+                                color: Colors.green,
                                 icon: Icons.grain,
                               ),
                             ),
@@ -446,7 +446,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     (_dailyMacros?['macros']['fats'] as num?)
                                         ?.toDouble() ??
                                     0.0,
-                                color: Colors.green,
+                                color: Colors.orange,
                                 icon: Icons.water_drop,
                               ),
                             ),
