@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:fitness_tracker_app/screens/workout_screen.dart';
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
@@ -36,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 1:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => const ProgressScreen()),
+          MaterialPageRoute(builder: (_) => const WorkoutScreen()),
         );
         break;
       case 2:

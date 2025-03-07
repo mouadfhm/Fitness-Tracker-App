@@ -5,7 +5,7 @@ import 'token_service.dart'; // Import the new token service
 
 class ApiService {
   final String baseUrl =
-      "https://342c-196-127-147-43.ngrok-free.app/api"; // Replace with your backend URL 192.168.11.102
+      "https://3a73-196-117-88-220.ngrok-free.app/api"; // Replace with your backend URL 192.168.11.102
   final storage = FlutterSecureStorage();
 
   Future<Map<String, dynamic>> register(
@@ -249,7 +249,46 @@ class ApiService {
       throw Exception('Failed to load meals by date');
     }
   }
-
+//get exercice
+Future<List<dynamic>> getExercices() async {
+  final token = await TokenService.getToken();
+  final response = await http.get(
+    Uri.parse('$baseUrl/workouts/exercises'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+  if (response.statusCode == 200) {
+    return jsonDecode(
+      response.body,
+    ); // Expecting a JSON array of grouped meals
+  } else {
+    throw Exception('Failed to load exercices by date');
+  }
+}
+//store workout
+Future<Map<String, dynamic>> storeWorkout(String activityType,int duration,String date,)
+async {
+  final token = await TokenService.getToken();
+  final response = await http.post(
+    Uri.parse('$baseUrl/workouts/add'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+    body: jsonEncode({
+      'workout_date': date,
+      'activity_type': activityType,
+      'duration': duration,
+    }),
+  );
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    return jsonDecode(response.body);
+  } else {
+    throw Exception('Failed to store workout: ${response.body}');
+  }
+}
   // Fetch progress entries
   Future<List<dynamic>> getProgress() async {
     final token = await TokenService.getToken();
