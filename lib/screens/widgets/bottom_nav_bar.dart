@@ -32,7 +32,7 @@ class CustomBottomNavBar extends StatelessWidget {
           ),
           IconButton(
             icon: Icon(
-              Icons.fastfood,
+              Icons.restaurant,
               color: currentIndex == 2 ? Colors.blue : Colors.grey,
             ),
             onPressed: () => onTap(2),

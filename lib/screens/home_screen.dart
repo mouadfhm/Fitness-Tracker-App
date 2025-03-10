@@ -1,10 +1,8 @@
 // ignore_for_file: deprecated_member_use
-
 import 'package:fitness_tracker_app/screens/workout_screen.dart';
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'profile_screen.dart';
-import 'progress_screen.dart';
 import 'foods_screen.dart';
 import 'meal_detail_screen.dart';
 import '../services/api_service.dart';
@@ -20,39 +18,21 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ApiService _apiService = ApiService();
-  int _currentIndex = 0;
+  final int _currentIndex = 0;
 
   void _onNavBarTap(int index) {
     if (index == _currentIndex) return;
-    setState(() {
-      _currentIndex = index;
-    });
-    switch (index) {
-      case 0:
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-        break;
-      case 1:
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const WorkoutScreen()),
-        );
-        break;
-      case 2:
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const FoodsScreen()),
-        );
-        break;
-      case 3:
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ProfileScreen()),
-        );
-        break;
-    }
+
+    final routes = [
+      const HomeScreen(),
+      const WorkoutScreen(),
+      const FoodsScreen(),
+      const ProfileScreen(),
+    ];
+
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => routes[index]));
   }
 
   Map<String, dynamic>? _dailyMacros;
@@ -60,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, List<dynamic>> _groupedMeals = {};
   bool _isLoading = true;
   String? _errorMessage;
+  double? _caloriesBurned;
 
   @override
   void initState() {
@@ -87,6 +68,14 @@ class _HomeScreenState extends State<HomeScreen> {
         groupedMeals.putIfAbsent(date, () => []).add(meal);
       }
 
+      // Get today's date in format YYYY-MM-DD
+      final today = DateTime.now().toString().substring(0, 10);
+
+      // Fetch calories burned for today
+      await fetchBurnedCalories(today);
+
+      // Check if the widget is still mounted before calling setState
+      if (!mounted) return;
       setState(() {
         _dailyMacros = dailyMacros;
         _consumedMacros = consumedMacros;
@@ -94,11 +83,68 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoading = false;
       });
     } catch (error) {
+      // Check if the widget is still mounted before calling setState
+      if (!mounted) return;
       setState(() {
         _errorMessage = error.toString();
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> fetchBurnedCalories(String date) async {
+    try {
+      final double caloriesBurned = await _apiService.getCalories(date);
+      if (!mounted) return;
+      setState(() {
+        _caloriesBurned = caloriesBurned;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = error.toString();
+      });
+    }
+  }
+
+  Widget _buildCaloriesBurnedCard() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.local_fire_department, color: Colors.red, size: 30),
+                const SizedBox(width: 12),
+                Text(
+                  'Calories Burned Today',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _caloriesBurned != null
+                  ? '${_caloriesBurned!.toStringAsFixed(1)} kcal'
+                  : 'No data available',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildMacroCard({
@@ -454,6 +500,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
 
+                        const SizedBox(height: 10),
+                        // Calories Burned Section
+                        _buildCaloriesBurnedCard(),
                         const SizedBox(height: 24),
 
                         // Meals Section Header

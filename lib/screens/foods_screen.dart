@@ -6,7 +6,7 @@ import '../providers/food_provider.dart';
 import '../services/food_service.dart';
 import 'food_details_screen.dart';
 import 'home_screen.dart';
-import 'progress_screen.dart';
+import 'workout_screen.dart';
 import 'profile_screen.dart';
 import 'new_food_screen.dart';
 import 'widgets/bottom_nav_bar.dart';
@@ -33,6 +33,20 @@ class _FoodsScreenState extends State<FoodsScreen>
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+  void _onNavBarTap(int index) {
+    if (index == _currentIndex) return;
+
+    final routes = [
+      const HomeScreen(),
+      const WorkoutScreen(),
+      const FoodsScreen(),
+      const ProfileScreen(),
+    ];
+
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => routes[index]));
   }
 
   /// Barcode scanning: attempts to scan and then fetch food info.
@@ -80,18 +94,6 @@ class _FoodsScreenState extends State<FoodsScreen>
   }
 
   /// Bottom Navigation tap handler.
-  void _onNavBarTap(int index) {
-    final routes = [
-      const HomeScreen(),
-      const ProgressScreen(),
-      const FoodsScreen(),
-      const ProfileScreen(),
-    ];
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => routes[index]),
-    );
-  }
 
   /// Navigates to NewFoodScreen. On return, refresh the provider.
   Future<void> _goToNewFood(BuildContext context) async {

@@ -2,10 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'token_service.dart'; // Import the new token service
-
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 class ApiService {
-  final String baseUrl =
-      "https://3a73-196-117-88-220.ngrok-free.app/api"; // Replace with your backend URL 192.168.11.102
+  final String baseUrl = dotenv.env['BASE_URL']!; 
   final storage = FlutterSecureStorage();
 
   Future<Map<String, dynamic>> register(
@@ -151,6 +150,27 @@ class ApiService {
     }
   }
 
+  //get calories burned
+  Future<double> getCalories(String date) async {
+    final token = await TokenService.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/workouts/calories-burned'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'workout_date': date}),
+    );
+
+    if (response.statusCode == 200) {
+      // Parse the direct number response
+      final dynamic decodedResponse = jsonDecode(response.body);
+      // Convert to double, regardless of whether it's returned as int or double
+      return (decodedResponse as num).toDouble();
+    } else {
+      throw Exception('Failed to get calories: ${response.body}');
+    }
+  }
 
   // get foods
   Future<List<dynamic>> getFoods() async {
@@ -249,46 +269,52 @@ class ApiService {
       throw Exception('Failed to load meals by date');
     }
   }
-//get exercice
-Future<List<dynamic>> getExercices() async {
-  final token = await TokenService.getToken();
-  final response = await http.get(
-    Uri.parse('$baseUrl/workouts/exercises'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    },
-  );
-  if (response.statusCode == 200) {
-    return jsonDecode(
-      response.body,
-    ); // Expecting a JSON array of grouped meals
-  } else {
-    throw Exception('Failed to load exercices by date');
+
+  //get exercice
+  Future<List<dynamic>> getExercices() async {
+    final token = await TokenService.getToken();
+    final response = await http.get(
+      Uri.parse('$baseUrl/workouts/exercises'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(
+        response.body,
+      ); // Expecting a JSON array of grouped meals
+    } else {
+      throw Exception('Failed to load exercices by date');
+    }
   }
-}
-//store workout
-Future<Map<String, dynamic>> storeWorkout(String activityType,int duration,String date,)
-async {
-  final token = await TokenService.getToken();
-  final response = await http.post(
-    Uri.parse('$baseUrl/workouts/add'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    },
-    body: jsonEncode({
-      'workout_date': date,
-      'activity_type': activityType,
-      'duration': duration,
-    }),
-  );
-  if (response.statusCode == 200 || response.statusCode == 201) {
-    return jsonDecode(response.body);
-  } else {
-    throw Exception('Failed to store workout: ${response.body}');
+
+  //store workout
+  Future<Map<String, dynamic>> storeWorkout(
+    String activityType,
+    int duration,
+    String date,
+  ) async {
+    final token = await TokenService.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/workouts/add'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'workout_date': date,
+        'activity_type': activityType,
+        'duration': duration,
+      }),
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to store workout: ${response.body}');
+    }
   }
-}
+
   // Fetch progress entries
   Future<List<dynamic>> getProgress() async {
     final token = await TokenService.getToken();

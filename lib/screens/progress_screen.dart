@@ -5,11 +5,6 @@ import 'package:fl_chart/fl_chart.dart';
 import '../services/api_service.dart';
 import 'package:intl/intl.dart';
 
-import 'home_screen.dart';
-import 'profile_screen.dart';
-import 'foods_screen.dart';
-import 'widgets/bottom_nav_bar.dart';
-
 class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
 
@@ -22,7 +17,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   List<dynamic> _progressEntries = [];
-  final int _currentIndex = 1;
 
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
@@ -31,21 +25,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
   void initState() {
     super.initState();
     _fetchProgress();
-  }
-
-  void _onNavBarTap(int index) {
-    if (index == _currentIndex) return;
-
-    final routes = [
-      const HomeScreen(),
-      const ProgressScreen(),
-      const FoodsScreen(),
-      const ProfileScreen(),
-    ];
-
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => routes[index]));
   }
 
   Future<void> _fetchProgress() async {
@@ -197,10 +176,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
             dotData: FlDotData(
               show: true,
               getDotPainter:
-                  (spot, percent, barData, index) => FlDotCirclePainter(
-                    color: Colors.white,
-                    radius: 5,
-                  ),
+                  (spot, percent, barData, index) =>
+                      FlDotCirclePainter(color: Colors.white, radius: 5),
             ),
           ),
         ],
@@ -254,10 +231,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   ),
                 ),
               ),
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: _onNavBarTap,
-      ),
     );
   }
 
@@ -326,7 +299,10 @@ class _ProgressScreenState extends State<ProgressScreen> {
                 ),
               ),
               onPressed: _addProgress,
-              child: const Text("Add Your Progress", style: TextStyle(fontSize: 16)),
+              child: const Text(
+                "Add Your Progress",
+                style: TextStyle(fontSize: 16),
+              ),
             ),
           ],
         ),

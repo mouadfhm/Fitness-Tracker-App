@@ -1,11 +1,14 @@
+// lib/screens/profile_screen.dart
 // ignore_for_file: library_private_types_in_public_api
 
 import 'package:flutter/material.dart';
-import 'package:fitness_tracker_app/services/api_service.dart';
+import 'package:provider/provider.dart';
+import 'package:fitness_tracker_app/providers/profile_provider.dart';
 import 'update_profile_screen.dart';
 import 'home_screen.dart';
-import 'progress_screen.dart';
+import 'workout_screen.dart';
 import 'foods_screen.dart';
+import 'progress_screen.dart';
 import 'widgets/bottom_nav_bar.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -16,42 +19,46 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final ApiService apiService = ApiService();
-  Map<String, dynamic>? profileData;
-  bool isLoading = true;
-  String errorMessage = '';
   final int _currentIndex = 3;
 
   @override
   void initState() {
     super.initState();
-    _fetchProfile();
+    // Fetch profile data using the provider after the first frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ProfileProvider>(context, listen: false).fetchProfile();
+    });
   }
 
-  void _fetchProfile() async {
-    try {
-      final data = await apiService.getProfile();
-      setState(() {
-        profileData = data;
-        isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        errorMessage = e.toString();
-        isLoading = false;
-      });
-    }
+  void _onNavBarTap(int index) {
+    if (index == _currentIndex) return;
+
+    final routes = [
+      const HomeScreen(),
+      const WorkoutScreen(),
+      const FoodsScreen(),
+      const ProfileScreen(),
+    ];
+
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => routes[index]));
   }
 
-  void _goToProfileEdit() {
-    if (profileData != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => UpdateProfileScreen(profileData: profileData!),
-        ),
-      );
-    }
+  void _goToProfileEdit(Map<String, dynamic> profileData) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => UpdateProfileScreen(profileData: profileData),
+      ),
+    );
+  }
+
+  void _goToProgressScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ProgressScreen()),
+    );
   }
 
   @override
@@ -62,130 +69,126 @@ class _ProfileScreenState extends State<ProfileScreen> {
           "Profile",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        actions: [
+          Consumer<ProfileProvider>(
+            builder: (context, provider, child) {
+              // Only show edit button when profile data exists.
+              return IconButton(
+                onPressed:
+                    provider.profileData != null
+                        ? () => _goToProfileEdit(provider.profileData!)
+                        : null,
+                icon: const Icon(Icons.edit),
+                tooltip: 'Edit Profile',
+              );
+            },
+          ),
+        ],
+        elevation: 0,
       ),
-      body:
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : profileData != null
-              ? SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    // Profile Avatar
-                    Center(
-                      child: CircleAvatar(
-                        radius: 50,
-                        backgroundImage: AssetImage(
-                          profileData!['gender'] == "male"
-                              ? profileData!['weight'] > 100
-                                  ? 'lib/assets/gorilla.png' // Show gorilla for males > 100kg
-                                  : 'lib/assets/dog.png' // Show dog for males <= 100kg
-                              : profileData!['weight'] > 80
-                              ? 'lib/assets/penguin.png' // Show penguin for females > 80kg
-                              : 'lib/assets/rabbit.png', // Show rabbit for females <= 80kg
+      body: Consumer<ProfileProvider>(
+        builder: (context, provider, child) {
+          if (provider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (provider.profileData != null) {
+            final profileData = provider.profileData!;
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  // Profile Avatar
+                  Center(
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundImage: AssetImage(
+                        profileData['gender'] == "male"
+                            ? profileData['weight'] > 100
+                                ? 'lib/assets/gorilla.png' // For males > 100kg
+                                : 'lib/assets/dog.png' // For males <= 100kg
+                            : profileData['weight'] > 80
+                            ? 'lib/assets/penguin.png' // For females > 80kg
+                            : 'lib/assets/rabbit.png', // For females <= 80kg
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Profile Name
+                  Text(
+                    profileData['name'],
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    profileData['email'],
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 20),
+                  // Profile Information Cards
+                  Card(
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildProfileTile(
+                          Icons.cake,
+                          "Age",
+                          "${profileData['age']} years",
                         ),
-                      ),
+                        _buildProfileTile(
+                          Icons.monitor_weight,
+                          "Weight",
+                          "${profileData['weight']} kg",
+                        ),
+                        _buildProfileTile(
+                          Icons.height,
+                          "Height",
+                          "${profileData['height']} cm",
+                        ),
+                        _buildProfileTile(
+                          Icons.fitness_center,
+                          "Activity Level",
+                          profileData['activity_level'],
+                        ),
+                        _buildProfileTile(
+                          Icons.emoji_events,
+                          "Fitness Goal",
+                          profileData['fitness_goal'],
+                        ),
+                        _buildProfileTile(
+                          profileData['gender'] == "male"
+                              ? Icons.male
+                              : Icons.female,
+                          "Gender",
+                          profileData['gender'],
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
-                    // Profile Name
-                    Text(
-                      profileData!['name'],
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      profileData!['email'],
-                      style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Profile Information Cards
-                    Card(
-                      elevation: 3,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        children: [
-                          _buildProfileTile(
-                            Icons.cake,
-                            "Age",
-                            "${profileData!['age']} years",
-                          ),
-                          _buildProfileTile(
-                            Icons.monitor_weight,
-                            "Weight",
-                            "${profileData!['weight']} kg",
-                          ),
-                          _buildProfileTile(
-                            Icons.height,
-                            "Height",
-                            "${profileData!['height']} cm",
-                          ),
-                          _buildProfileTile(
-                            Icons.fitness_center,
-                            "Activity Level",
-                            profileData!['activity_level'],
-                          ),
-                          _buildProfileTile(
-                            Icons.emoji_events,
-                            "Fitness Goal",
-                            profileData!['fitness_goal'],
-                          ),
-                          _buildProfileTile(
-                            profileData!['gender'] == "male"
-                                ? Icons.male
-                                : Icons.female,
-                            "Gender",
-                            profileData!['gender'],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              )
-              : Center(
-                child: Text(
-                  "Error: $errorMessage",
-                  style: const TextStyle(color: Colors.red, fontSize: 16),
-                ),
+                  ),
+                ],
               ),
-
-      // Floating Button for Editing Profile
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _goToProfileEdit,
-        icon: const Icon(Icons.edit),
-        label: const Text("Edit Profile"),
-      ),
-
-      // Bottom Navigation
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          if (index != _currentIndex) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) {
-                  switch (index) {
-                    case 0:
-                      return const HomeScreen();
-                    case 1:
-                      return const ProgressScreen();
-                    case 2:
-                      return const FoodsScreen();
-                    case 3:
-                    default:
-                      return const ProfileScreen();
-                  }
-                },
+            );
+          } else {
+            return Center(
+              child: Text(
+                "Error: ${provider.errorMessage}",
+                style: const TextStyle(color: Colors.red, fontSize: 16),
               ),
             );
           }
         },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _goToProgressScreen,
+        icon: const Icon(Icons.fitness_center),
+        label: const Text("Progress"),
+      ),
+      bottomNavigationBar: CustomBottomNavBar(
+        currentIndex: _currentIndex,
+        onTap: _onNavBarTap,
       ),
     );
   }
