@@ -5,6 +5,7 @@ class Food {
   final double protein;
   final double carbs;
   final double fats;
+  final int isFavorite;
 
   Food({
     required this.id,
@@ -13,6 +14,7 @@ class Food {
     required this.protein,
     required this.carbs,
     required this.fats,
+    this.isFavorite = 0,
   });
 
   factory Food.fromJson(Map<String, dynamic> json) {
@@ -49,6 +51,7 @@ class Food {
         protein: (json['protein'] as num).toDouble(),
         carbs: (json['carbs'] as num).toDouble(),
         fats: (json['fats'] as num).toDouble(),
+        isFavorite: json['is_favorite'] ?? 0,
       );
     }
   }

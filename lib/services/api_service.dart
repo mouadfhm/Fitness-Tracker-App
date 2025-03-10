@@ -3,8 +3,9 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'token_service.dart'; // Import the new token service
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class ApiService {
-  final String baseUrl = dotenv.env['BASE_URL']!; 
+  final String baseUrl = dotenv.env['BASE_URL']!;
   final storage = FlutterSecureStorage();
 
   Future<Map<String, dynamic>> register(
@@ -218,6 +219,38 @@ class ApiService {
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to add food: ${response.body}');
+    }
+  }
+
+  // add favorite food
+  Future<Map<String, dynamic>> addFavoriteFood(int foodId) async {
+    final token = await TokenService.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/foods/favorite/$foodId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to add favorite food: ${response.body}');
+    }
+  }
+  Future<Map<String, dynamic>> removeFavoriteFood(int foodId) async {
+    final token = await TokenService.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/foods/remove-favorite/$foodId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to add favorite food: ${response.body}');
     }
   }
 

@@ -420,87 +420,47 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Macro Progress Cards
-                        GridView(
+                        // Macro Progress Cards - Fixed GridView
+                        GridView.count(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                childAspectRatio: 1.2,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
-                              ),
+                          crossAxisCount: 2,
+                          childAspectRatio: 1.2,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
                           children: [
-                            Expanded(
-                              child: _buildMacroCard(
-                                label: 'Calories',
-                                consumed:
-                                    (_consumedMacros?['totalCalories'] as num?)
-                                        ?.toDouble() ??
-                                    0.0,
-                                goal:
-                                    (_dailyMacros?['macros']['calories']
-                                            as num?)
-                                        ?.toDouble() ??
-                                    0.0,
-                                color: Colors.red,
-                                icon: Icons.local_fire_department,
-                              ),
+                            _buildMacroCard(
+                              label: 'Calories',
+                              consumed: (_consumedMacros?['totalCalories'] as num?)?.toDouble() ?? 0.0,
+                              goal: (_dailyMacros?['macros']['calories'] as num?)?.toDouble() ?? 0.0,
+                              color: Colors.red,
+                              icon: Icons.local_fire_department,
                             ),
-                            Expanded(
-                              child: _buildMacroCard(
-                                label: 'Protein',
-                                consumed:
-                                    (_consumedMacros?['totalProtein'] as num?)
-                                        ?.toDouble() ??
-                                    0.0,
-                                goal:
-                                    (_dailyMacros?['macros']['protein'] as num?)
-                                        ?.toDouble() ??
-                                    0.0,
-                                color: Colors.blue,
-                                icon: Icons.fitness_center,
-                              ),
+                            _buildMacroCard(
+                              label: 'Protein',
+                              consumed: (_consumedMacros?['totalProtein'] as num?)?.toDouble() ?? 0.0,
+                              goal: (_dailyMacros?['macros']['protein'] as num?)?.toDouble() ?? 0.0,
+                              color: Colors.blue,
+                              icon: Icons.fitness_center,
                             ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildMacroCard(
-                                label: 'Carbs',
-                                consumed:
-                                    (_consumedMacros?['totalCarbs'] as num?)
-                                        ?.toDouble() ??
-                                    0.0,
-                                goal:
-                                    (_dailyMacros?['macros']['carbs'] as num?)
-                                        ?.toDouble() ??
-                                    0.0,
-                                color: Colors.green,
-                                icon: Icons.grain,
-                              ),
+                            _buildMacroCard(
+                              label: 'Carbs',
+                              consumed: (_consumedMacros?['totalCarbs'] as num?)?.toDouble() ?? 0.0,
+                              goal: (_dailyMacros?['macros']['carbs'] as num?)?.toDouble() ?? 0.0,
+                              color: Colors.green,
+                              icon: Icons.grain,
                             ),
-                            Expanded(
-                              child: _buildMacroCard(
-                                label: 'Fat',
-                                consumed:
-                                    (_consumedMacros?['totalFat'] as num?)
-                                        ?.toDouble() ??
-                                    0.0,
-                                goal:
-                                    (_dailyMacros?['macros']['fats'] as num?)
-                                        ?.toDouble() ??
-                                    0.0,
-                                color: Colors.orange,
-                                icon: Icons.water_drop,
-                              ),
+                            _buildMacroCard(
+                              label: 'Fat',
+                              consumed: (_consumedMacros?['totalFat'] as num?)?.toDouble() ?? 0.0,
+                              goal: (_dailyMacros?['macros']['fats'] as num?)?.toDouble() ?? 0.0,
+                              color: Colors.orange,
+                              icon: Icons.water_drop,
                             ),
                           ],
                         ),
 
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 24),
                         // Calories Burned Section
                         _buildCaloriesBurnedCard(),
                         const SizedBox(height: 24),

@@ -37,13 +37,12 @@ class _NewFoodScreenState extends State<NewFoodScreen> {
         double.parse(_carbsController.text.trim()),
         double.parse(_fatsController.text.trim()),
       );
-      
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const FoodsScreen()),
       );
-      setState(() {
-      });
+      setState(() {});
 
       _formKey.currentState!.reset();
     } catch (error) {
@@ -62,6 +61,7 @@ class _NewFoodScreenState extends State<NewFoodScreen> {
     required String labelText,
     required String unit,
     required IconData icon,
+    required Color color,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -82,7 +82,7 @@ class _NewFoodScreenState extends State<NewFoodScreen> {
         decoration: InputDecoration(
           labelText: labelText,
           hintText: '0 $unit',
-          prefixIcon: Icon(icon, color: Colors.blue.shade600),
+          prefixIcon: Icon(icon, color: color as Color?),
           suffixText: unit,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -110,7 +110,10 @@ class _NewFoodScreenState extends State<NewFoodScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
-        title: const Text('Add New Food', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Add New Food',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -143,7 +146,10 @@ class _NewFoodScreenState extends State<NewFoodScreen> {
                     decoration: InputDecoration(
                       labelText: 'Food Name',
                       hintText: 'Enter food name',
-                      prefixIcon: Icon(Icons.food_bank, color: Colors.blue.shade600),
+                      prefixIcon: Icon(
+                        Icons.restaurant,
+                        color: Colors.blue.shade600,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -166,24 +172,28 @@ class _NewFoodScreenState extends State<NewFoodScreen> {
                   labelText: 'Calories',
                   unit: 'kcal',
                   icon: Icons.local_fire_department,
+                  color: Colors.red,
                 ),
                 _buildNutritionField(
                   controller: _proteinController,
                   labelText: 'Protein',
                   unit: 'g',
                   icon: Icons.fitness_center,
+                  color: Colors.blue,
                 ),
                 _buildNutritionField(
                   controller: _carbsController,
                   labelText: 'Carbohydrates',
                   unit: 'g',
                   icon: Icons.grain,
+                  color: Colors.green,
                 ),
                 _buildNutritionField(
                   controller: _fatsController,
                   labelText: 'Fats',
                   unit: 'g',
                   icon: Icons.water_drop,
+                  color: Colors.orange,
                 ),
 
                 // Error Message
@@ -209,16 +219,17 @@ class _NewFoodScreenState extends State<NewFoodScreen> {
                     ),
                     elevation: 3,
                   ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          'Add Food',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                  child:
+                      _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                            'Add Food',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
                 ),
               ],
             ),

@@ -1,6 +1,8 @@
 // ignore_for_file: deprecated_member_use
 
+import 'package:fitness_tracker_app/providers/food_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/food.dart';
 import '../services/api_service.dart';
 import 'package:intl/intl.dart';
@@ -17,9 +19,17 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
   final TextEditingController _quantityController = TextEditingController();
   final ApiService _apiService = ApiService();
   bool _isStoringMeal = false;
+  bool _isTogglingFavorite = false;
   String? _storeMealMessage;
   String? _selectedTime;
   DateTime _selectedDate = DateTime.now();
+  bool _isFavorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isFavorite = widget.food.isFavorite == 1;
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -78,9 +88,9 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
 
     try {
       await _apiService.storeMeal(name, quantity, mealTime, mealDate);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Meal stored successfully!")),
-      );
+      setState(() {
+        _storeMealMessage = "Meal stored successfully!";
+      });
     } catch (error) {
       setState(() {
         _storeMealMessage = "Error: ${error.toString()}";
@@ -90,6 +100,57 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
         _isStoringMeal = false;
       });
     }
+  }
+
+  Future<void> toggleFavoriteFood() async {
+    if (_isTogglingFavorite) return;
+
+    setState(() {
+      _isTogglingFavorite = true;
+    });
+
+    try {
+      if (_isFavorite) {
+        await _apiService.removeFavoriteFood(widget.food.id);
+        _showFeedback("Removed from favorites");
+      } else {
+        await _apiService.addFavoriteFood(widget.food.id);
+        _showFeedback("Added to favorites");
+      }
+      Provider.of<FoodProvider>(context, listen: false).refreshFoods();
+      setState(() {
+        _isFavorite = !_isFavorite;
+      });
+    } catch (error) {
+      _showFeedback(
+        "Error updating favorites: ${error.toString()}",
+        isError: true,
+      );
+    } finally {
+      setState(() {
+        _isTogglingFavorite = false;
+      });
+    }
+  }
+
+  void _showFeedback(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red.shade700 : Colors.green.shade700,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        duration: const Duration(seconds: 2),
+        action:
+            isError
+                ? SnackBarAction(
+                  label: 'Retry',
+                  textColor: Colors.white,
+                  onPressed: toggleFavoriteFood,
+                )
+                : null,
+      ),
+    );
   }
 
   @override
@@ -107,6 +168,34 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
           widget.food.name,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
+        actions: [
+          IconButton(
+            icon: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return ScaleTransition(scale: animation, child: child);
+              },
+              child:
+                  _isTogglingFavorite
+                      ? const SizedBox(
+                        key: ValueKey('loading'),
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.red,
+                        ),
+                      )
+                      : Icon(
+                        _isFavorite ? Icons.favorite : Icons.favorite_border,
+                        key: ValueKey(_isFavorite),
+                        color: Colors.red,
+                      ),
+            ),
+            onPressed: _isTogglingFavorite ? null : toggleFavoriteFood,
+            tooltip: _isFavorite ? 'Remove from favorites' : 'Add to favorites',
+          ),
+        ],
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -283,12 +372,8 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                           hintText: "Select Meal Time",
                           hintStyle: TextStyle(color: Colors.grey.shade600),
                         ),
-                        style: TextStyle(
-                          color: Colors.black,
-                        ), // Add this line to set the dropdown text color
-                        dropdownColor:
-                            Colors
-                                .white, // Optional: set dropdown background color
+                        style: TextStyle(color: Colors.black),
+                        dropdownColor: Colors.white,
                         items: const [
                           DropdownMenuItem(
                             value: "Breakfast",
