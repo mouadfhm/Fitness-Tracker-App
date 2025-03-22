@@ -1,15 +1,25 @@
 // lib/screens/profile_screen.dart
 // ignore_for_file: library_private_types_in_public_api
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fitness_tracker_app/providers/profile_provider.dart';
+import 'package:fitness_tracker_app/services/api_service.dart'; // New import
+import 'package:image_picker/image_picker.dart'; // New import for image selection
+import 'package:shared_preferences/shared_preferences.dart'; // New import for settings
+import 'package:url_launcher/url_launcher.dart'; // New import for external links
 import 'update_profile_screen.dart';
 import 'home_screen.dart';
 import 'workout_screen.dart';
 import 'foods_screen.dart';
 import 'progress_screen.dart';
 import 'widgets/bottom_nav_bar.dart';
+import 'settings_screen.dart'; // New import
+import 'help_support_screen.dart'; // New import
+import 'achievements_screen.dart'; // New import
+import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,16 +28,40 @@ class ProfileScreen extends StatefulWidget {
   _ProfileScreenState createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
   final int _currentIndex = 3;
+  late TabController _tabController;
+  bool _isDarkMode = false;
+  final _apiService = ApiService();
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     // Fetch profile data using the provider after the first frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ProfileProvider>(context, listen: false).fetchProfile();
+      _loadSettings();
     });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isDarkMode = prefs.getBool('darkMode') ?? false;
+    });
+  }
+
+  Future<void> _saveSettings(String key, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, value);
   }
 
   void _onNavBarTap(int index) {
@@ -61,6 +95,115 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _goToAchievements() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AchievementsScreen()),
+    );
+  }
+
+  void _goToSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+    );
+  }
+
+  void _goToHelpSupport() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const HelpSupportScreen()),
+    );
+  }
+
+  Future<void> _selectProfileImage() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+
+      if (image != null) {
+        // Update profile picture through provider
+        Provider.of<ProfileProvider>(
+          context,
+          listen: false,
+        ).updateProfilePicture(image.path);
+      }
+    } catch (e) {
+      // Show error dialog if image picking fails
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: const Text('Error'),
+                content: const Text(
+                  'Failed to select image. Please try again.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
+        );
+      }
+    }
+  }
+
+  void _logout() async {
+    await _apiService.logout();
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
+  }
+
+  Future<void> _showLogoutConfirmation() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Logout'),
+          content: const Text(
+            'Are you sure you want to log out of your account?',
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Logout', style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _logout();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _toggleDarkMode(bool value) {
+    setState(() {
+      _isDarkMode = value;
+    });
+    _saveSettings('darkMode', value);
+    // Implement theme change through provider or other state management
+  }
+
+  void _launchPrivacyPolicy() async {
+    // const url = 'https://yourapp.com/privacy-policy';
+    // if (await canLaunch(url)) {
+    //   await launch(url);
+    // }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -70,6 +213,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
+          IconButton(
+            onPressed: _goToSettings,
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
+          ),
           Consumer<ProfileProvider>(
             builder: (context, provider, child) {
               // Only show edit button when profile data exists.
@@ -85,106 +233,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
         elevation: 0,
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(text: "Profile"),
+            // Tab(text: "Stats"),
+            Tab(text: "Activity"),
+          ],
+        ),
       ),
-      body: Consumer<ProfileProvider>(
-        builder: (context, provider, child) {
-          if (provider.isLoading) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (provider.profileData != null) {
-            final profileData = provider.profileData!;
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  // Profile Avatar
-                  Center(
-                    child: CircleAvatar(
-                      radius: 50,
-                      backgroundImage: AssetImage(
-                        profileData['gender'] == "male"
-                            ? profileData['weight'] > 100
-                                ? 'lib/assets/gorilla.png' // For males > 100kg
-                                : 'lib/assets/dog.png' // For males <= 100kg
-                            : profileData['weight'] > 80
-                            ? 'lib/assets/penguin.png' // For females > 80kg
-                            : 'lib/assets/rabbit.png', // For females <= 80kg
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Profile Name
-                  Text(
-                    profileData['name'],
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    profileData['email'],
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 20),
-                  // Profile Information Cards
-                  Card(
-                    elevation: 3,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildProfileTile(
-                          Icons.cake,
-                          "Age",
-                          "${profileData['age']} years",
-                        ),
-                        _buildProfileTile(
-                          Icons.monitor_weight,
-                          "Weight",
-                          "${profileData['weight']} kg",
-                        ),
-                        _buildProfileTile(
-                          Icons.height,
-                          "Height",
-                          "${profileData['height']} cm",
-                        ),
-                        _buildProfileTile(
-                          Icons.fitness_center,
-                          "Activity Level",
-                          profileData['activity_level'],
-                        ),
-                        _buildProfileTile(
-                          Icons.emoji_events,
-                          "Fitness Goal",
-                          profileData['fitness_goal'],
-                        ),
-                        _buildProfileTile(
-                          profileData['gender'] == "male"
-                              ? Icons.male
-                              : Icons.female,
-                          "Gender",
-                          profileData['gender'],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          } else {
-            return Center(
-              child: Text(
-                "Error: ${provider.errorMessage}",
-                style: const TextStyle(color: Colors.red, fontSize: 16),
-              ),
-            );
-          }
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _goToProgressScreen,
-        icon: const Icon(Icons.fitness_center),
-        label: const Text("Progress"),
+      body: TabBarView(
+        controller: _tabController,
+        children: [_buildProfileTab(),  _buildActivityTab()],
+        // children: [_buildProfileTab(), _buildStatsTab(), _buildActivityTab()],
       ),
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _currentIndex,
@@ -193,13 +254,620 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Helper function to build Profile Info Tiles
+  Widget _buildProfileTab() {
+    return Consumer<ProfileProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (provider.profileData != null) {
+          final profileData = provider.profileData!;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                // Profile Avatar with edit option
+                Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    GestureDetector(
+                      onTap: _selectProfileImage,
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundImage:
+                            profileData['custom_profile_pic'] != null
+                                ? FileImage(
+                                  File(profileData['custom_profile_pic']),
+                                )
+                                : AssetImage(
+                                      profileData['gender'] == "male"
+                                          ? profileData['weight'] > 100
+                                              ? 'lib/assets/gorilla.png'
+                                              : 'lib/assets/dog.png'
+                                          : profileData['weight'] > 80
+                                          ? 'lib/assets/penguin.png'
+                                          : 'lib/assets/rabbit.png',
+                                    )
+                                    as ImageProvider,
+                      ),
+                    ),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        onPressed: _selectProfileImage,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Profile Name
+                Text(
+                  profileData['name'],
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  profileData['email'],
+                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 8),
+                // Membership badge
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[100],
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    profileData['membership_type'] ?? 'Free Member',
+                    style: TextStyle(
+                      color: Colors.blue[800],
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Profile Information Cards
+                Card(
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildProfileTile(
+                        Icons.cake,
+                        "Age",
+                        "${profileData['age']} years",
+                      ),
+                      _buildProfileTile(
+                        Icons.monitor_weight,
+                        "Weight",
+                        "${profileData['weight']} kg",
+                      ),
+                      _buildProfileTile(
+                        Icons.height,
+                        "Height",
+                        "${profileData['height']} cm",
+                      ),
+                      _buildProfileTile(
+                        Icons.fitness_center,
+                        "Activity Level",
+                        profileData['activity_level'],
+                      ),
+                      _buildProfileTile(
+                        Icons.emoji_events,
+                        "Fitness Goal",
+                        profileData['fitness_goal'],
+                      ),
+                      _buildProfileTile(
+                        profileData['gender'] == "male"
+                            ? Icons.male
+                            : Icons.female,
+                        "Gender",
+                        profileData['gender'],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Quick Action Buttons
+                GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 3,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  children: [
+                    _buildQuickActionButton(
+                      Icons.fitness_center,
+                      "Progress",
+                      _goToProgressScreen,
+                    ),
+                    _buildQuickActionButton(
+                      Icons.emoji_events,
+                      "Achievements",
+                      _goToAchievements,
+                    ),
+                    _buildQuickActionButton(
+                      Icons.settings,
+                      "Settings",
+                      _goToSettings,
+                    ),
+                    _buildQuickActionButton(
+                      Icons.help_outline,
+                      "Help",
+                      _goToHelpSupport,
+                    ),
+                    _buildQuickActionButton(
+                      Icons.privacy_tip_outlined,
+                      "Privacy",
+                      _launchPrivacyPolicy,
+                    ),
+                    _buildQuickActionButton(
+                      Icons.logout,
+                      "Logout",
+                      _showLogoutConfirmation,
+                      color: Colors.red[100],
+                      iconColor: Colors.red,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // App Version
+                Text(
+                  "App version: 1.2.3",
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+              ],
+            ),
+          );
+        } else {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  "Error: ${provider.errorMessage}",
+                  style: const TextStyle(color: Colors.red, fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    Provider.of<ProfileProvider>(
+                      context,
+                      listen: false,
+                    ).fetchProfile();
+                  },
+                  child: const Text("Retry"),
+                ),
+              ],
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  // Widget _buildStatsTab() {
+  //   return Consumer<ProfileProvider>(
+  //     builder: (context, provider, child) {
+  //       if (provider.isLoading) {
+  //         return const Center(child: CircularProgressIndicator());
+  //       } else if (provider.profileData != null) {
+  //         return SingleChildScrollView(
+  //           padding: const EdgeInsets.all(16.0),
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               const Text(
+  //                 "Your Fitness Stats",
+  //                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+  //               ),
+  //               const SizedBox(height: 16),
+  //               // BMI Card
+  //               _buildStatsCard(
+  //                 "BMI",
+  //                 _calculateBMI(
+  //                   (provider.profileData!['weight'] as num).toDouble(),
+  //                   (provider.profileData!['height'] as num).toDouble(),
+  //                 ).toStringAsFixed(1),
+  //                 _getBMICategory(
+  //                   _calculateBMI(
+  //                     (provider.profileData!['weight'] as num).toDouble(),
+  //                     (provider.profileData!['height'] as num).toDouble(),
+  //                   ),
+  //                 ),
+  //                 Icons.health_and_safety,
+  //                 _getBMIColor(
+  //                   _calculateBMI(
+  //                     (provider.profileData!['weight'] as num).toDouble(),
+  //                     (provider.profileData!['height'] as num).toDouble(),
+  //                   ),
+  //                 ),
+  //               ),
+  //               const SizedBox(height: 16),
+  //               // Weekly Summary
+  //               const Text(
+  //                 "Weekly Summary",
+  //                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //               ),
+  //               const SizedBox(height: 8),
+  //               // Summary Stats
+  //               Row(
+  //                 children: [
+  //                   Expanded(
+  //                     child: _buildStatItem(
+  //                       "Workouts",
+  //                       "12",
+  //                       Icons.fitness_center,
+  //                       Colors.orange,
+  //                     ),
+  //                   ),
+  //                   Expanded(
+  //                     child: _buildStatItem(
+  //                       "Calories",
+  //                       "8,540",
+  //                       Icons.local_fire_department,
+  //                       Colors.red,
+  //                     ),
+  //                   ),
+  //                   Expanded(
+  //                     child: _buildStatItem(
+  //                       "Steps",
+  //                       "58,423",
+  //                       Icons.directions_walk,
+  //                       Colors.green,
+  //                     ),
+  //                   ),
+  //                 ],
+  //               ),
+  //               const SizedBox(height: 24),
+  //               // Goals Progress
+  //               const Text(
+  //                 "Goals Progress",
+  //                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+  //               ),
+  //               const SizedBox(height: 16),
+  //               _buildProgressBar(
+  //                 "Weight Goal",
+  //                 "${provider.profileData!['weight']} kg",
+  //                 "${provider.profileData!['target_weight'] ?? (provider.profileData!['weight'] - 5)} kg",
+  //                 0.6,
+  //               ),
+  //               const SizedBox(height: 12),
+  //               _buildProgressBar(
+  //                 "Workout Frequency",
+  //                 "3 days/week",
+  //                 "5 days/week",
+  //                 0.6,
+  //               ),
+  //               const SizedBox(height: 12),
+  //               _buildProgressBar(
+  //                 "Daily Steps",
+  //                 "8,340 steps",
+  //                 "10,000 steps",
+  //                 0.83,
+  //               ),
+  //               const SizedBox(height: 24),
+  //               Center(
+  //                 child: ElevatedButton.icon(
+  //                   onPressed: _goToProgressScreen,
+  //                   icon: const Icon(Icons.analytics),
+  //                   label: const Text("View Detailed Stats"),
+  //                   style: ElevatedButton.styleFrom(
+  //                     padding: const EdgeInsets.symmetric(
+  //                       horizontal: 24,
+  //                       vertical: 12,
+  //                     ),
+  //                   ),
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         );
+  //       } else {
+  //         return Center(
+  //           child: Text(
+  //             "Error: ${provider.errorMessage}",
+  //             style: const TextStyle(color: Colors.red, fontSize: 16),
+  //           ),
+  //         );
+  //       }
+  //     },
+  //   );
+  // }
+
+  Widget _buildActivityTab() {
+    return ListView(
+      padding: const EdgeInsets.all(16.0),
+      children: [
+        const Text(
+          "Recent Activity",
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        _buildActivityItem(
+          "Completed Workout",
+          "Upper Body Strength",
+          "Today, 9:30 AM",
+          Icons.fitness_center,
+          Colors.blue,
+        ),
+        _buildActivityItem(
+          "Tracked Meal",
+          "Lunch - 650 calories",
+          "Today, 12:15 PM",
+          Icons.restaurant,
+          Colors.orange,
+        ),
+        _buildActivityItem(
+          "Achieved Badge",
+          "10 Day Streak",
+          "Yesterday",
+          Icons.emoji_events,
+          Colors.amber,
+        ),
+        _buildActivityItem(
+          "Completed Workout",
+          "Morning Run - 5km",
+          "Yesterday, 7:45 AM",
+          Icons.directions_run,
+          Colors.green,
+        ),
+        _buildActivityItem(
+          "Updated Weight",
+          "75.5 kg",
+          "2 days ago",
+          Icons.monitor_weight,
+          Colors.purple,
+        ),
+        _buildActivityItem(
+          "Completed Workout",
+          "Full Body HIIT",
+          "3 days ago",
+          Icons.fitness_center,
+          Colors.blue,
+        ),
+        _buildActivityItem(
+          "Added Friend",
+          "Connected with Jane",
+          "3 days ago",
+          Icons.person_add,
+          Colors.teal,
+        ),
+        Center(
+          child: TextButton(
+            onPressed: () {
+              // View more activity
+            },
+            child: const Text("View More Activity"),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Helper Functions
+
+  double _calculateBMI(double weight, double height) {
+    // BMI formula: weight (kg) / (height (m))^2
+    return weight / ((height / 100) * (height / 100));
+  }
+
+  String _getBMICategory(double bmi) {
+    if (bmi < 18.5) return "Underweight";
+    if (bmi < 25) return "Normal";
+    if (bmi < 30) return "Overweight";
+    return "Obese";
+  }
+
+  Color _getBMIColor(double bmi) {
+    if (bmi < 18.5) return Colors.blue;
+    if (bmi < 25) return Colors.green;
+    if (bmi < 30) return Colors.orange;
+    return Colors.red;
+  }
+
+  // Helper UI Builders
+
   Widget _buildProfileTile(IconData icon, String title, String value) {
     return ListTile(
       leading: Icon(icon, color: Colors.blue),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       subtitle: Text(value, style: TextStyle(color: Colors.grey[700])),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    );
+  }
+
+  Widget _buildQuickActionButton(
+    IconData icon,
+    String label,
+    VoidCallback onTap, {
+    Color? color,
+    Color? iconColor,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: color ?? Colors.blue[50],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: iconColor ?? Colors.blue, size: 30),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: iconColor ?? Colors.blue[800],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatsCard(
+    String title,
+    String value,
+    String subtitle,
+    IconData icon,
+    Color color,
+  ) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 32),
+            ),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(color: color, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            Text(
+              label,
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProgressBar(
+    String title,
+    String current,
+    String target,
+    double progress,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+            Text(
+              "$current / $target",
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: LinearProgressIndicator(
+            value: progress,
+            backgroundColor: Colors.grey[200],
+            minHeight: 10,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActivityItem(
+    String title,
+    String subtitle,
+    String time,
+    IconData icon,
+    Color color,
+  ) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.2),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color),
+        ),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        trailing: Text(
+          time,
+          style: TextStyle(color: Colors.grey[600], fontSize: 12),
+        ),
+      ),
     );
   }
 }

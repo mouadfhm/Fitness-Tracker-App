@@ -19,7 +19,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
   bool _obscurePassword = true;
-  String? _errorMessage;
 
   void _goToRegister() {
     Navigator.push(
@@ -33,7 +32,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
     try {
@@ -49,9 +47,16 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
     } catch (error) {
-      setState(() {
-        _errorMessage = error.toString();
-      });
+      // Show error feedback as a snackbar instead of displaying on screen
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Login failed. Please try again.',
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       setState(() {
         _isLoading = false;
@@ -89,12 +94,13 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       obscureText: obscureText,
       keyboardType: keyboardType,
-      validator: validator ?? (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter $labelText';
-        }
-        return null;
-      },
+      validator: validator ??
+          (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter $labelText';
+            }
+            return null;
+          },
     );
   }
 
@@ -149,22 +155,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
-
-                  // Error Message
-                  if (_errorMessage != null)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _errorMessage!,
-                        style: TextStyle(color: Colors.red.shade700),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
 
                   // Email Field
                   _buildTextField(

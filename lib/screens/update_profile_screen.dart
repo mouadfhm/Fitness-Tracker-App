@@ -22,8 +22,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
 
   final _apiService = ApiService();
   bool _isLoading = false;
-  String? _errorMessage;
-  String? _successMessage;
 
   @override
   void initState() {
@@ -35,7 +33,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     _heightController.text = widget.profileData['height']?.toString() ?? '';
 
     List<String> validGenders = ['male', 'female'];
-    List<String> validActivities = ['sedentary','light','Moderate', 'active', 'very_active'];
+    List<String> validActivities = ['sedentary', 'light', 'Moderate', 'active', 'very_active'];
     List<String> validGoals = ['weight_loss', 'muscle_gain', 'maintenance'];
 
     String? gender = widget.profileData['gender'];
@@ -52,8 +50,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
-      _successMessage = null;
     });
     try {
       final data = await _apiService.updateProfile({
@@ -65,14 +61,29 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         'fitness_goal': _selectedGoal,
       });
 
-      setState(() {
-        _successMessage = data['message'];
-      });
+      // Show success message via Snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            data['message'] ?? 'Profile updated successfully.',
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+
       _goToProfile();
     } catch (error) {
-      setState(() {
-        _errorMessage = error.toString();
-      });
+      // Show error feedback as a Snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+            'Profile update failed. Please try again.',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       setState(() {
         _isLoading = false;
@@ -104,12 +115,13 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
-      validator: validator ?? (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter $labelText';
-        }
-        return null;
-      },
+      validator: validator ??
+          (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter $labelText';
+            }
+            return null;
+          },
       decoration: InputDecoration(
         labelText: labelText,
         border: OutlineInputBorder(
@@ -121,7 +133,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.blue, width: 2),
+          borderSide: const BorderSide(color: Colors.blue, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -143,28 +155,6 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Error Message
-            if (_errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.red),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-
-            // Success Message
-            if (_successMessage != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Text(
-                  _successMessage!,
-                  style: const TextStyle(color: Colors.green),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-
             // Text Fields
             _buildTextField(
               controller: _ageController,
@@ -250,7 +240,7 @@ class _UpdateProfileScreenState extends State<UpdateProfileScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              items: ['sedentary','light','Moderate', 'active', 'very_active']
+              items: ['sedentary', 'light', 'Moderate', 'active', 'very_active']
                   .map((a) => DropdownMenuItem(value: a, child: Text(a)))
                   .toList(),
               onChanged: (value) {

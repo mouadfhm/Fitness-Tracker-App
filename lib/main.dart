@@ -11,7 +11,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Load the environment file - change the filename based on your build environment
-  await dotenv.load(fileName: ".env.development");
+  await dotenv.load(fileName: ".env.production");
   
   // Get the stored token (if any)
   final token = await TokenService.getToken();

@@ -30,15 +30,19 @@ class _ProgressScreenState extends State<ProgressScreen> {
   Future<void> _fetchProgress() async {
     try {
       final data = await _apiService.getProgress();
-      setState(() {
-        _progressEntries = data;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _progressEntries = data;
+          _isLoading = false;
+        });
+      }
     } catch (error) {
-      setState(() {
-        _errorMessage = error.toString();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = error.toString();
+          _isLoading = false;
+        });
+      }
     }
   }
 

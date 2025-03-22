@@ -57,6 +57,11 @@ class ApiService {
     }
   }
 
+  /// Optional: clear token on logout
+  Future<void> logout() async {
+    await TokenService.deleteToken();
+  }
+
   // Example: GET profile
   Future<Map<String, dynamic>> getProfile() async {
     final token = await TokenService.getToken();
@@ -238,6 +243,7 @@ class ApiService {
       throw Exception('Failed to add favorite food: ${response.body}');
     }
   }
+
   Future<Map<String, dynamic>> removeFavoriteFood(int foodId) async {
     final token = await TokenService.getToken();
     final response = await http.post(
@@ -382,11 +388,6 @@ class ApiService {
 
   Future<String?> getToken() async {
     return await TokenService.getToken();
-  }
-
-  /// Optional: clear token on logout
-  Future<void> logout() async {
-    await TokenService.deleteToken();
   }
 
   // Add more methods for registration, foods, meals, etc.

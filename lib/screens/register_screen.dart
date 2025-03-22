@@ -20,14 +20,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  String? _errorMessage;
 
   void _register() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
     });
 
     try {
@@ -38,7 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _confirmPasswordController.text.trim(),
       );
 
-      // Navigate to home screen after successful registration
+      // Navigate to update profile screen after successful registration
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -55,9 +53,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       );
     } catch (error) {
-      setState(() {
-        _errorMessage = error.toString();
-      });
+      // Show error feedback as a Snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Registration failed. Please try again.',
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       setState(() {
         _isLoading = false;
@@ -84,8 +89,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         suffixIcon: showObscureToggle != null
             ? IconButton(
                 icon: Icon(
-                  showObscureToggle 
-                      ? Icons.visibility_off 
+                  showObscureToggle
+                      ? Icons.visibility_off
                       : Icons.visibility,
                   color: Colors.grey,
                 ),
@@ -95,12 +100,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       obscureText: obscureText,
       keyboardType: keyboardType,
-      validator: validator ?? (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter $labelText';
-        }
-        return null;
-      },
+      validator: validator ??
+          (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter $labelText';
+            }
+            return null;
+          },
     );
   }
 
@@ -157,22 +163,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 32),
-
-                  // Error Message
-                  if (_errorMessage != null)
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        _errorMessage!,
-                        style: TextStyle(color: Colors.red.shade700),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
 
                   // Name Field
                   _buildTextField(
