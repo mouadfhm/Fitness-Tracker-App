@@ -24,7 +24,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
     super.initState();
     // Ensure workouts are fetched after the first frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ExercisesProvider>(context, listen: false).fetchWorkouts();
+      Provider.of<ExercisesProvider>(context, listen: false).refreshWorkouts();
     });
   }
 

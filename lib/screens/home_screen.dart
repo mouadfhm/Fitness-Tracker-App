@@ -381,13 +381,6 @@ class _HomeScreenState extends State<HomeScreen> {
           'Nutrition Tracker',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          IconButton(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-          ),
-        ],
         elevation: 0,
       ),
       body:

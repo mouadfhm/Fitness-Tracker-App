@@ -44,6 +44,8 @@ dependencies:
   shared_preferences: ^2.1.1  # For saving settings
   url_launcher: ^6.1.11  # For launching external links/URLs
   file: 7.0.1  # For handling File objects
+  firebase_core: any
+  firebase_messaging: any
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
 dev_dependencies:

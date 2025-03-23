@@ -390,5 +390,37 @@ class ApiService {
     return await TokenService.getToken();
   }
 
-  // Add more methods for registration, foods, meals, etc.
+  //get achievements
+  Future<List<dynamic>> getAchievements() async {
+    final token = await TokenService.getToken();
+    final response = await http.get(
+      Uri.parse('$baseUrl/achievements'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load achievements: ${response.body}');
+    }
+  }
+  Future<List<dynamic>> getUserAchievements() async {
+    final token = await TokenService.getToken();
+    final response = await http.get(
+      Uri.parse('$baseUrl/user/achievements'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load achievements: ${response.body}');
+    }
+  }
 }

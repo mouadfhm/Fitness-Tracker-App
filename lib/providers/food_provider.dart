@@ -36,9 +36,14 @@ class FoodProvider extends ChangeNotifier {
 
   // Optionally, implement a method to add a food to the list.
   Future<void> addFood(Food newFood) async {
-    // Add newFood to your backend via your API, then refresh the list.
-    // For demonstration, we'll simply add it locally:
-    _foods.add(newFood);
+    _apiService.addFood(
+      newFood.name,
+      newFood.calories,
+      newFood.protein,
+      newFood.carbs,
+      newFood.fats,
+    );
+    refreshFoods();
     notifyListeners();
   }
 }

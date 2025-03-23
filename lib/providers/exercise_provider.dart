@@ -55,25 +55,32 @@ class ExercisesProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> refreshWorkouts() async {
+    await fetchWorkouts();
+  }
+
   void _applyFilters() {
     List<dynamic> temp = [];
     // Filter by category first
     if (_selectedCategory == 'All') {
       temp = _allWorkouts;
     } else {
-      temp = _allWorkouts.where((workout) {
-        final name = workout['name']?.toString().toLowerCase() ?? '';
-        return name == _selectedCategory.toLowerCase();
-      }).toList();
+      temp =
+          _allWorkouts.where((workout) {
+            final name = workout['name']?.toString().toLowerCase() ?? '';
+            return name == _selectedCategory.toLowerCase();
+          }).toList();
     }
     // Then filter by search query if any
     if (_searchQuery.isNotEmpty) {
-      temp = temp.where((workout) {
-        final name = workout['name']?.toString().toLowerCase() ?? '';
-        final description = workout['description']?.toString().toLowerCase() ?? '';
-        return name.contains(_searchQuery.toLowerCase()) ||
-            description.contains(_searchQuery.toLowerCase());
-      }).toList();
+      temp =
+          temp.where((workout) {
+            final name = workout['name']?.toString().toLowerCase() ?? '';
+            final description =
+                workout['description']?.toString().toLowerCase() ?? '';
+            return name.contains(_searchQuery.toLowerCase()) ||
+                description.contains(_searchQuery.toLowerCase());
+          }).toList();
     }
     _filteredWorkouts = temp;
   }

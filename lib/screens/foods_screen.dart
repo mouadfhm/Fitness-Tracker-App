@@ -63,11 +63,13 @@ class _FoodsScreenState extends State<FoodsScreen>
       var foodInfo = await _foodService.getFoodInfo(barcode);
       if (foodInfo != null) {
         final scannedFood = Food.fromJson(foodInfo);
+        debugPrint('fooooooood: $scannedFood');
         // Optionally, add food to the provider (or your backend) here:
         await Provider.of<FoodProvider>(
           context,
           listen: false,
         ).addFood(scannedFood);
+        
         // Navigate to FoodDetailsScreen directly.
         Navigator.push(
           context,

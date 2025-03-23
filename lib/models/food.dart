@@ -26,7 +26,7 @@ class Food {
             ? json['id'] as int
             : int.tryParse(json['id'].toString()) ?? 0,
         // Use 'brands' as name for Open Food Facts, change as needed
-        name: json['brands'] ?? 'Unknown',
+        name: ((json['brands']?.toString().toUpperCase() ?? '') + ', ' + ((json["_keywords"] as List<dynamic>?)?.join(', ') ?? '')).trim().isEmpty ? 'Unknown' : ((json['brands']?.toString().toUpperCase() ?? '') + ', ' + ((json["_keywords"] as List<dynamic>?)?.join(', ') ?? '')).trim(),
         calories: nutriments['energy-kcal_100g'] is num
             ? (nutriments['energy-kcal_100g'] as num).toDouble()
             : double.tryParse(nutriments['energy-kcal_100g']?.toString() ?? '') ?? 0.0,
