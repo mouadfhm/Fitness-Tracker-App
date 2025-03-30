@@ -6,8 +6,8 @@ import '../providers/food_provider.dart';
 import '../services/food_service.dart';
 import 'food_details_screen.dart';
 import 'home_screen.dart';
-import 'workout_screen.dart';
 import 'profile_screen.dart';
+import 'workout/workout_calendar_screen.dart';
 import 'new_food_screen.dart';
 import 'widgets/bottom_nav_bar.dart';
 
@@ -40,7 +40,7 @@ class _FoodsScreenState extends State<FoodsScreen>
 
     final routes = [
       const HomeScreen(),
-      const WorkoutScreen(),
+      const WorkoutCalendarScreen(),
       const FoodsScreen(),
       const ProfileScreen(),
     ];

@@ -1,7 +1,6 @@
 // ignore_for_file: deprecated_member_use
-import 'package:fitness_tracker_app/screens/workout_screen.dart';
+import 'package:fitness_tracker_app/screens/workout/workout_calendar_screen.dart';
 import 'package:flutter/material.dart';
-import 'login_screen.dart';
 import 'profile_screen.dart';
 import 'foods_screen.dart';
 import 'meal_detail_screen.dart';
@@ -25,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final routes = [
       const HomeScreen(),
-      const WorkoutScreen(),
+      const WorkoutCalendarScreen(),
       const FoodsScreen(),
       const ProfileScreen(),
     ];
@@ -40,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, List<dynamic>> _groupedMeals = {};
   bool _isLoading = true;
   String? _errorMessage;
-  double? _caloriesBurned;
+  // double? _caloriesBurned;
 
   @override
   void initState() {
@@ -48,13 +47,6 @@ class _HomeScreenState extends State<HomeScreen> {
     _fetchData();
   }
 
-  void _logout() async {
-    await _apiService.logout();
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
-  }
 
   Future<void> _fetchData() async {
     try {
@@ -69,10 +61,10 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       // Get today's date in format YYYY-MM-DD
-      final today = DateTime.now().toString().substring(0, 10);
+      // final today = DateTime.now().toString().substring(0, 10);
 
       // Fetch calories burned for today
-      await fetchBurnedCalories(today);
+      // await fetchBurnedCalories(today);
 
       // Check if the widget is still mounted before calling setState
       if (!mounted) return;
@@ -92,60 +84,60 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> fetchBurnedCalories(String date) async {
-    try {
-      final double caloriesBurned = await _apiService.getCalories(date);
-      if (!mounted) return;
-      setState(() {
-        _caloriesBurned = caloriesBurned;
-      });
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _errorMessage = error.toString();
-      });
-    }
-  }
+  // Future<void> fetchBurnedCalories(String date) async {
+  //   try {
+  //     final double caloriesBurned = await _apiService.getCalories(date);
+  //     if (!mounted) return;
+  //     setState(() {
+  //       _caloriesBurned = caloriesBurned;
+  //     });
+  //   } catch (error) {
+  //     if (!mounted) return;
+  //     setState(() {
+  //       _errorMessage = error.toString();
+  //     });
+  //   }
+  // }
 
-  Widget _buildCaloriesBurnedCard() {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.local_fire_department, color: Colors.red, size: 30),
-                const SizedBox(width: 12),
-                Text(
-                  'Calories Burned Today',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _caloriesBurned != null
-                  ? '${_caloriesBurned!.toStringAsFixed(1)} kcal'
-                  : 'No data available',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.red,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildCaloriesBurnedCard() {
+  //   return Card(
+  //     elevation: 4,
+  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  //     child: Padding(
+  //       padding: const EdgeInsets.all(16.0),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Row(
+  //             children: [
+  //               Icon(Icons.local_fire_department, color: Colors.red, size: 30),
+  //               const SizedBox(width: 12),
+  //               Text(
+  //                 'Calories Burned Today',
+  //                 style: TextStyle(
+  //                   fontSize: 16,
+  //                   fontWeight: FontWeight.bold,
+  //                   color: Colors.grey[800],
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //           const SizedBox(height: 12),
+  //           Text(
+  //             _caloriesBurned != null
+  //                 ? '${_caloriesBurned!.toStringAsFixed(1)} kcal'
+  //                 : 'No data available',
+  //             style: TextStyle(
+  //               fontSize: 24,
+  //               fontWeight: FontWeight.bold,
+  //               color: Colors.red,
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   Widget _buildMacroCard({
     required String label,
@@ -424,29 +416,53 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             _buildMacroCard(
                               label: 'Calories',
-                              consumed: (_consumedMacros?['totalCalories'] as num?)?.toDouble() ?? 0.0,
-                              goal: (_dailyMacros?['macros']['calories'] as num?)?.toDouble() ?? 0.0,
+                              consumed:
+                                  (_consumedMacros?['totalCalories'] as num?)
+                                      ?.toDouble() ??
+                                  0.0,
+                              goal:
+                                  (_dailyMacros?['macros']['calories'] as num?)
+                                      ?.toDouble() ??
+                                  0.0,
                               color: Colors.red,
                               icon: Icons.local_fire_department,
                             ),
                             _buildMacroCard(
                               label: 'Protein',
-                              consumed: (_consumedMacros?['totalProtein'] as num?)?.toDouble() ?? 0.0,
-                              goal: (_dailyMacros?['macros']['protein'] as num?)?.toDouble() ?? 0.0,
+                              consumed:
+                                  (_consumedMacros?['totalProtein'] as num?)
+                                      ?.toDouble() ??
+                                  0.0,
+                              goal:
+                                  (_dailyMacros?['macros']['protein'] as num?)
+                                      ?.toDouble() ??
+                                  0.0,
                               color: Colors.blue,
                               icon: Icons.fitness_center,
                             ),
                             _buildMacroCard(
                               label: 'Carbs',
-                              consumed: (_consumedMacros?['totalCarbs'] as num?)?.toDouble() ?? 0.0,
-                              goal: (_dailyMacros?['macros']['carbs'] as num?)?.toDouble() ?? 0.0,
+                              consumed:
+                                  (_consumedMacros?['totalCarbs'] as num?)
+                                      ?.toDouble() ??
+                                  0.0,
+                              goal:
+                                  (_dailyMacros?['macros']['carbs'] as num?)
+                                      ?.toDouble() ??
+                                  0.0,
                               color: Colors.green,
                               icon: Icons.grain,
                             ),
                             _buildMacroCard(
                               label: 'Fat',
-                              consumed: (_consumedMacros?['totalFat'] as num?)?.toDouble() ?? 0.0,
-                              goal: (_dailyMacros?['macros']['fats'] as num?)?.toDouble() ?? 0.0,
+                              consumed:
+                                  (_consumedMacros?['totalFat'] as num?)
+                                      ?.toDouble() ??
+                                  0.0,
+                              goal:
+                                  (_dailyMacros?['macros']['fats'] as num?)
+                                      ?.toDouble() ??
+                                  0.0,
                               color: Colors.orange,
                               icon: Icons.water_drop,
                             ),
@@ -455,8 +471,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
                         const SizedBox(height: 24),
                         // Calories Burned Section
-                        _buildCaloriesBurnedCard(),
-                        const SizedBox(height: 24),
+                        // _buildCaloriesBurnedCard(),
+                        // const SizedBox(height: 24),
 
                         // Meals Section Header
                         Text(

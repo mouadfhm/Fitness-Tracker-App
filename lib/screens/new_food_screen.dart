@@ -1,6 +1,7 @@
+import 'package:fitness_tracker_app/models/food.dart';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
-import 'foods_screen.dart';
+import 'food_details_screen.dart';
 
 class NewFoodScreen extends StatefulWidget {
   const NewFoodScreen({super.key});
@@ -30,17 +31,20 @@ class _NewFoodScreenState extends State<NewFoodScreen> {
     });
 
     try {
-      await _apiService.addFood(
+      var food = await _apiService.addFood(
         _nameController.text.trim(),
         double.parse(_caloriesController.text.trim()),
         double.parse(_proteinController.text.trim()),
         double.parse(_carbsController.text.trim()),
         double.parse(_fatsController.text.trim()),
       );
-
-      Navigator.pushReplacement(
+      food = food['food'];
+      final foodModel = Food.fromJson(food);
+      Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const FoodsScreen()),
+        MaterialPageRoute(
+          builder: (context) => FoodDetailsScreen(food: foodModel),
+        ),
       );
       setState(() {});
 
@@ -48,6 +52,7 @@ class _NewFoodScreenState extends State<NewFoodScreen> {
     } catch (error) {
       setState(() {
         _errorMessage = "Failed to add food. Please try again.";
+        debugPrint('error: $error');
       });
     } finally {
       setState(() {

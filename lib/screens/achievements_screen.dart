@@ -1,116 +1,25 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
-import 'dart:async';
-import '../services/api_service.dart';
+import 'package:provider/provider.dart';
+
+import '../providers/achievement_provider.dart';
 
 class AchievementsScreen extends StatefulWidget {
-  const AchievementsScreen({Key? key}) : super(key: key);
+  const AchievementsScreen({super.key});
 
   @override
   State<AchievementsScreen> createState() => _AchievementsScreenState();
 }
 
 class _AchievementsScreenState extends State<AchievementsScreen> {
-  late Future<Map<String, dynamic>> _achievementsData;
-  final ApiService _apiService = ApiService();
-
   @override
   void initState() {
     super.initState();
-    _achievementsData = _loadAchievements();
-  }
-
-  Future<Map<String, dynamic>> _loadAchievements() async {
-    try {
-      // Get all achievements and user achievements
-      final allAchievements = await _apiService.getAchievements();
-      final userAchievements = await _apiService.getUserAchievements();
-
-      // Create a map to easily look up which achievements the user has unlocked
-      final Map<int, dynamic> userAchievementsMap = {};
-      for (var achievement in userAchievements) {
-        userAchievementsMap[achievement['achievement_id']] = achievement;
-      }
-
-      return {
-        'allAchievements': allAchievements,
-        'userAchievementsMap': userAchievementsMap,
-      };
-    } catch (e) {
-      // Re-throw to be caught by the FutureBuilder
-      rethrow;
-    }
-  }
-
-  // Map achievement types to appropriate icons
-  IconData getIconForType(String type) {
-    switch (type) {
-      case 'meals':
-        return Icons.restaurant;
-      case 'streak':
-        return Icons.local_fire_department;
-      case 'calories':
-        return Icons.monitor_weight;
-      case 'workouts':
-        return Icons.fitness_center;
-      case 'cardio':
-        return Icons.directions_run;
-      case 'progress':
-        return Icons.trending_up;
-      case 'weight':
-        return Icons.scale;
-      case 'muscle':
-        return Icons.sports_gymnastics;
-      default:
-        return Icons.emoji_events;
-    }
-  }
-
-  // Get color based on achievement type
-  Color getColorForType(String type) {
-    switch (type) {
-      case 'meals':
-        return Colors.green;
-      case 'streak':
-        return Colors.orange;
-      case 'calories':
-        return Colors.red;
-      case 'workouts':
-        return Colors.blue;
-      case 'cardio':
-        return Colors.purple;
-      case 'progress':
-        return Colors.teal;
-      case 'weight':
-        return Colors.indigo;
-      case 'muscle':
-        return Colors.brown;
-      default:
-        return Colors.amber;
-    }
-  }
-
-  // Get a human-readable description of the achievement type
-  String getTypeDescription(String type, int target) {
-    switch (type) {
-      case 'meals':
-        return 'Log $target meal(s)';
-      case 'streak':
-        return 'Maintain a streak of $target days';
-      case 'calories':
-        return '$target calories';
-      case 'workouts':
-        return 'Complete $target workout(s)';
-      case 'cardio':
-        return 'Complete $target cardio session(s)';
-      case 'progress':
-        return 'Log $target progress update(s)';
-      case 'weight':
-        return 'Change weight by $target kg';
-      case 'muscle':
-        return 'Gain $target kg of muscle';
-      default:
-        return 'Complete $target tasks';
-    }
+    // Load achievements when the screen is first created
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AchievementsProvider>().loadAchievements();
+    });
   }
 
   void _showAchievementDetails(
@@ -119,8 +28,13 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
     bool unlocked,
     dynamic userAchievement,
   ) {
-    final Color achievementColor = getColorForType(achievement['type']);
-    final IconData achievementIcon = getIconForType(achievement['type']);
+    final achievementsProvider = context.read<AchievementsProvider>();
+    final Color achievementColor = achievementsProvider.getColorForType(
+      achievement['type'],
+    );
+    final IconData achievementIcon = achievementsProvider.getIconForType(
+      achievement['type'],
+    );
 
     showModalBottomSheet(
       context: context,
@@ -304,7 +218,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      _getTargetDescription(
+                                      achievementsProvider.getTargetDescription(
                                         achievement['type'],
                                         achievement['target'],
                                       ),
@@ -363,7 +277,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        _formatDate(
+                                        achievementsProvider.formatDate(
                                           userAchievement['created_at'],
                                         ),
                                         style: TextStyle(
@@ -378,73 +292,6 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                             ),
                           ),
                         ],
-
-                        // Progress for locked achievements
-                        // if (!unlocked) ...[
-                        //   const SizedBox(height: 24),
-                        //   Text(
-                        //     'YOUR PROGRESS',
-                        //     style: TextStyle(
-                        //       fontSize: 12,
-                        //       fontWeight: FontWeight.w600,
-                        //       color: Colors.grey.shade600,
-                        //       letterSpacing: 1.2,
-                        //     ),
-                        //   ),
-                        //   const SizedBox(height: 16),
-                        //   Container(
-                        //     padding: const EdgeInsets.all(16),
-                        //     decoration: BoxDecoration(
-                        //       color: Colors.grey.shade50,
-                        //       borderRadius: BorderRadius.circular(12),
-                        //       border: Border.all(color: Colors.grey.shade200),
-                        //     ),
-                        //     child: Column(
-                        //       crossAxisAlignment: CrossAxisAlignment.start,
-                        //       children: [
-                        // Row(
-                        //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        //   children: [
-                        //     Text(
-                        //       'Progress toward completion',
-                        //       style: TextStyle(
-                        //         fontSize: 14,
-                        //         fontWeight: FontWeight.w500,
-                        //         color: Colors.grey.shade800,
-                        //       ),
-                        //     ),
-                        //     Text(
-                        //       '30%', // This would be dynamic in a real app
-                        //       style: TextStyle(
-                        //         fontSize: 14,
-                        //         fontWeight: FontWeight.w600,
-                        //         color: Colors.grey.shade800,
-                        //       ),
-                        //     ),
-                        //   ],
-                        // ),
-                        // const SizedBox(height: 12),
-                        // ClipRRect(
-                        //   borderRadius: BorderRadius.circular(4),
-                        //   child: LinearProgressIndicator(
-                        //     value: 0.3, // This would be dynamic in a real app
-                        //     minHeight: 8,
-                        //     backgroundColor: Colors.grey.shade200,
-                        //     valueColor: AlwaysStoppedAnimation<Color>(achievementColor),
-                        //   ),
-                        // ),
-                        // const SizedBox(height: 12),
-                        // Text(
-                        //   _getProgressText(achievement['type'], achievement['target']),
-                        //   style: TextStyle(
-                        //     fontSize: 14,
-                        //     color: Colors.grey.shade600,
-                        //   ),
-                        // ),
-                        //       ],
-                        //     ),
-                        //   ),
-                        // ],
                       ],
                     ),
                   ),
@@ -455,98 +302,19 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
     );
   }
 
-  String _formatDate(String dateString) {
-    // Parse the date string and format it nicely
-    try {
-      final date = DateTime.parse(dateString);
-      return '${date.day} ${_getMonthName(date.month)} ${date.year}';
-    } catch (e) {
-      return dateString.substring(0, 10); // Fallback to simple substring
-    }
-  }
-
-  String _getMonthName(int month) {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-    return months[month - 1];
-  }
-
-  String _getTargetDescription(String type, int target) {
-    switch (type) {
-      case 'meals':
-        return 'Log $target meal(s)';
-      case 'streak':
-        return 'Maintain a streak for $target days';
-      case 'calories':
-        return target > 1000
-            ? 'Reach ${target / 1000}k calories'
-            : 'Reach $target calories';
-      case 'workouts':
-        return 'Complete $target workout(s)';
-      case 'cardio':
-        return 'Complete $target cardio session(s)';
-      case 'progress':
-        return 'Log $target progress update(s)';
-      case 'weight':
-        return 'Lose $target kg';
-      case 'muscle':
-        return 'Gain $target kg of muscle';
-      default:
-        return 'Complete $target tasks';
-    }
-  }
-
-  Widget _buildInfoItem(
-    String title,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.grey.shade700,
-            fontSize: 14,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Icon(icon, color: color, size: 18),
-            const SizedBox(width: 8),
-            Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
-          ],
-        ),
-      ],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Achievements')),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _achievementsData,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: Consumer<AchievementsProvider>(
+        builder: (context, achievementsProvider, child) {
+          // Loading state
+          if (achievementsProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
+          }
+
+          // Error state
+          if (achievementsProvider.error != null) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -559,29 +327,27 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                       color: Colors.red,
                     ),
                     const SizedBox(height: 16),
-                    Text('Error loading achievements: ${snapshot.error}'),
+                    Text(
+                      'Error loading achievements: ${achievementsProvider.error}',
+                    ),
                     const SizedBox(height: 16),
                     ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _achievementsData = _loadAchievements();
-                        });
-                      },
+                      onPressed:
+                          () => achievementsProvider.retryLoadAchievements(),
                       child: const Text('Retry'),
                     ),
                   ],
                 ),
               ),
             );
-          } else if (!snapshot.hasData) {
+          }
+
+          // No achievements found
+          if (achievementsProvider.achievements.isEmpty) {
             return const Center(child: Text('No achievements found'));
           }
 
-          final allAchievements =
-              snapshot.data!['allAchievements'] as List<dynamic>;
-          final userAchievementsMap =
-              snapshot.data!['userAchievementsMap'] as Map<int, dynamic>;
-
+          // Achievements grid
           return GridView.builder(
             padding: const EdgeInsets.all(16.0),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -590,15 +356,14 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
               mainAxisSpacing: 16,
               childAspectRatio: 0.8,
             ),
-            itemCount: allAchievements.length,
+            itemCount: achievementsProvider.achievements.length,
             itemBuilder: (context, index) {
-              final achievement = allAchievements[index];
-              final bool unlocked = userAchievementsMap.containsKey(
+              final achievement = achievementsProvider.achievements[index];
+              final bool unlocked = achievementsProvider.isAchievementUnlocked(
                 achievement['id'],
               );
-              final Color achievementColor = getColorForType(
-                achievement['type'],
-              );
+              final Color achievementColor = achievementsProvider
+                  .getColorForType(achievement['type']);
 
               return Card(
                 elevation: 4,
@@ -615,7 +380,10 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                       context,
                       achievement,
                       unlocked,
-                      unlocked ? userAchievementsMap[achievement['id']] : null,
+                      unlocked
+                          ? achievementsProvider
+                              .userAchievements[achievement['id']]
+                          : null,
                     );
                   },
                   child: Padding(
@@ -634,7 +402,9 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                                       : Colors.grey.withOpacity(0.1),
                               child: Icon(
                                 unlocked
-                                    ? getIconForType(achievement['type'])
+                                    ? achievementsProvider.getIconForType(
+                                      achievement['type'],
+                                    )
                                     : Icons.lock_outline,
                                 size: 36,
                                 color:

@@ -1,5 +1,5 @@
 // lib/screens/profile_screen.dart
-// ignore_for_file: library_private_types_in_public_api
+// ignore_for_file: library_private_types_in_public_api, deprecated_member_use
 
 import 'dart:io';
 
@@ -8,11 +8,9 @@ import 'package:provider/provider.dart';
 import 'package:fitness_tracker_app/providers/profile_provider.dart';
 import 'package:fitness_tracker_app/services/api_service.dart'; // New import
 import 'package:image_picker/image_picker.dart'; // New import for image selection
-import 'package:shared_preferences/shared_preferences.dart'; // New import for settings
-import 'package:url_launcher/url_launcher.dart'; // New import for external links
 import 'update_profile_screen.dart';
 import 'home_screen.dart';
-import 'workout_screen.dart';
+import 'workout/workout_calendar_screen.dart';
 import 'foods_screen.dart';
 import 'progress_screen.dart';
 import 'widgets/bottom_nav_bar.dart';
@@ -32,7 +30,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   final int _currentIndex = 3;
   late TabController _tabController;
-  bool _isDarkMode = false;
   final _apiService = ApiService();
 
   @override
@@ -53,23 +50,17 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _isDarkMode = prefs.getBool('darkMode') ?? false;
     });
   }
 
-  Future<void> _saveSettings(String key, bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(key, value);
-  }
 
   void _onNavBarTap(int index) {
     if (index == _currentIndex) return;
 
     final routes = [
       const HomeScreen(),
-      const WorkoutScreen(),
+      const WorkoutCalendarScreen(),
       const FoodsScreen(),
       const ProfileScreen(),
     ];
@@ -189,13 +180,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  void _toggleDarkMode(bool value) {
-    setState(() {
-      _isDarkMode = value;
-    });
-    _saveSettings('darkMode', value);
-    // Implement theme change through provider or other state management
-  }
 
   void _launchPrivacyPolicy() async {
     // const url = 'https://yourapp.com/privacy-policy';
@@ -662,24 +646,6 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   // Helper Functions
 
-  double _calculateBMI(double weight, double height) {
-    // BMI formula: weight (kg) / (height (m))^2
-    return weight / ((height / 100) * (height / 100));
-  }
-
-  String _getBMICategory(double bmi) {
-    if (bmi < 18.5) return "Underweight";
-    if (bmi < 25) return "Normal";
-    if (bmi < 30) return "Overweight";
-    return "Obese";
-  }
-
-  Color _getBMIColor(double bmi) {
-    if (bmi < 18.5) return Colors.blue;
-    if (bmi < 25) return Colors.green;
-    if (bmi < 30) return Colors.orange;
-    return Colors.red;
-  }
 
   // Helper UI Builders
 
@@ -727,119 +693,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildStatsCard(
-    String title,
-    String value,
-    String subtitle,
-    IconData icon,
-    Color color,
-  ) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 32),
-            ),
-            const SizedBox(width: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  subtitle,
-                  style: TextStyle(color: color, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildStatItem(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            Text(
-              label,
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildProgressBar(
-    String title,
-    String current,
-    String target,
-    double progress,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-            Text(
-              "$current / $target",
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: LinearProgressIndicator(
-            value: progress,
-            backgroundColor: Colors.grey[200],
-            minHeight: 10,
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildActivityItem(
     String title,
