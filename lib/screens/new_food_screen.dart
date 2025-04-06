@@ -40,13 +40,13 @@ class _NewFoodScreenState extends State<NewFoodScreen> {
       );
       food = food['food'];
       final foodModel = Food.fromJson(food);
+      if (!mounted) return;
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => FoodDetailsScreen(food: foodModel),
         ),
       );
-      setState(() {});
 
       _formKey.currentState!.reset();
     } catch (error) {
@@ -68,14 +68,16 @@ class _NewFoodScreenState extends State<NewFoodScreen> {
     required IconData icon,
     required Color color,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade200,
+            color: isDark ? Colors.black26 : Colors.grey.shade200,
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -84,17 +86,31 @@ class _NewFoodScreenState extends State<NewFoodScreen> {
       child: TextFormField(
         controller: controller,
         keyboardType: TextInputType.number,
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.black87,
+        ),
         decoration: InputDecoration(
           labelText: labelText,
+          labelStyle: TextStyle(
+            color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+          ),
           hintText: '0 $unit',
-          prefixIcon: Icon(icon, color: color as Color?),
+          hintStyle: TextStyle(
+            color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+          ),
+          prefixIcon: Icon(icon, color: color),
           suffixText: unit,
+          suffixStyle: TextStyle(
+            color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+            fontWeight: FontWeight.bold,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide.none,
           ),
           filled: true,
           fillColor: Colors.transparent,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
         validator: (value) {
           if (value == null || value.isEmpty) {
@@ -112,131 +128,175 @@ class _NewFoodScreenState extends State<NewFoodScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Add New Food',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black,
+          ),
         ),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black,
+        iconTheme: IconThemeData(
+          color: isDark ? Colors.white : Colors.black,
+        ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Food Name Field
-                Container(
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.shade200,
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      labelText: 'Food Name',
-                      hintText: 'Enter food name',
-                      prefixIcon: Icon(
-                        Icons.restaurant,
-                        color: Colors.blue.shade600,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.transparent,
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter food name';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-
-                // Nutrition Fields
-                _buildNutritionField(
-                  controller: _caloriesController,
-                  labelText: 'Calories',
-                  unit: 'kcal',
-                  icon: Icons.local_fire_department,
-                  color: Colors.red,
-                ),
-                _buildNutritionField(
-                  controller: _proteinController,
-                  labelText: 'Protein',
-                  unit: 'g',
-                  icon: Icons.fitness_center,
-                  color: Colors.blue,
-                ),
-                _buildNutritionField(
-                  controller: _carbsController,
-                  labelText: 'Carbohydrates',
-                  unit: 'g',
-                  icon: Icons.grain,
-                  color: Colors.green,
-                ),
-                _buildNutritionField(
-                  controller: _fatsController,
-                  labelText: 'Fats',
-                  unit: 'g',
-                  icon: Icons.water_drop,
-                  color: Colors.orange,
-                ),
-
-                // Error Message
-                if (_errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Text(
-                      _errorMessage!,
-                      style: TextStyle(color: Colors.red.shade700),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-
-                // Add Food Button
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _addFood,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade600,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Food Name Field
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey.shade800 : Colors.white,
                       borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isDark ? Colors.black26 : Colors.grey.shade200,
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    elevation: 3,
+                    child: TextFormField(
+                      controller: _nameController,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                      decoration: InputDecoration(
+                        labelText: 'Food Name',
+                        labelStyle: TextStyle(
+                          color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                        ),
+                        hintText: 'Enter food name',
+                        hintStyle: TextStyle(
+                          color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+                        ),
+                        prefixIcon: Icon(
+                          Icons.restaurant,
+                          color: primaryColor,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: Colors.transparent,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter food name';
+                        }
+                        return null;
+                      },
+                    ),
                   ),
-                  child:
-                      _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text(
+
+                  // Nutrition Fields
+                  _buildNutritionField(
+                    controller: _caloriesController,
+                    labelText: 'Calories',
+                    unit: 'kcal',
+                    icon: Icons.local_fire_department,
+                    color: Colors.red.shade400,
+                  ),
+                  _buildNutritionField(
+                    controller: _proteinController,
+                    labelText: 'Protein',
+                    unit: 'g',
+                    icon: Icons.fitness_center,
+                    color: Colors.blue.shade400,
+                  ),
+                  _buildNutritionField(
+                    controller: _carbsController,
+                    labelText: 'Carbohydrates',
+                    unit: 'g',
+                    icon: Icons.grain,
+                    color: Colors.green.shade400,
+                  ),
+                  _buildNutritionField(
+                    controller: _fatsController,
+                    labelText: 'Fats',
+                    unit: 'g',
+                    icon: Icons.water_drop,
+                    color: Colors.orange.shade400,
+                  ),
+
+                  // Error Message
+                  if (_errorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(isDark ? 0.2 : 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.red.withOpacity(0.5),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          _errorMessage!,
+                          style: TextStyle(
+                            color: isDark ? Colors.red.shade300 : Colors.red.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+
+                  // Add Food Button
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _addFood,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: isDark 
+                          ? Colors.grey.shade700 
+                          : Colors.grey.shade300,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: isDark ? 4 : 3,
+                    ),
+                    child: _isLoading
+                        ? SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: isDark ? Colors.grey.shade300 : Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : const Text(
                             'Add Food',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
                             ),
                           ),
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
             ),
           ),
         ),

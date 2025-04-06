@@ -472,24 +472,24 @@ class ApiService {
     }
   }
 
-Future<List<dynamic>> getGymExercises() async {
-  final token = await TokenService.getToken();
-  final response = await http.get(
-    Uri.parse('$baseUrl/v2/workouts/exercises/search'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    },
-  );
-  
-  if (response.statusCode == 200) {
-    final decoded = jsonDecode(response.body);
-    // Assuming your JSON looks like: { "gym_exercises": [ ... ] }
-    return decoded['gym_exercises'] as List<dynamic>;
-  } else {
-    throw Exception('Failed to load exercises: ${response.body}');
+  Future<List<dynamic>> getGymExercises() async {
+    final token = await TokenService.getToken();
+    final response = await http.get(
+      Uri.parse('$baseUrl/v2/workouts/exercises/search'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final decoded = jsonDecode(response.body);
+      // Assuming your JSON looks like: { "gym_exercises": [ ... ] }
+      return decoded['gym_exercises'] as List<dynamic>;
+    } else {
+      throw Exception('Failed to load exercises: ${response.body}');
+    }
   }
-}
 
   Future<List<dynamic>> storeCustomWorkout(
     String name,
@@ -535,8 +535,8 @@ Future<List<dynamic>> getGymExercises() async {
       // ]
     );
 
-    if (response.statusCode == 200|| response.statusCode == 201) {
-      return jsonDecode(response.body) ;
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
     } else {
       throw Exception('Failed to store custom workout: ${response.body}');
     }
@@ -563,10 +563,28 @@ Future<List<dynamic>> getGymExercises() async {
       }),
     );
 
-    if (response.statusCode == 200|| response.statusCode == 201) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to update custom workout: ${response.body}');
+    }
+  }
+
+  // delete customWorkout
+  Future<void> deleteCustomWorkout(int workoutId) async {
+    final token = await TokenService.getToken();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/v2/workouts/custom-workouts/$workoutId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to delete custom workout: ${response.body}');
     }
   }
 
@@ -639,21 +657,21 @@ Future<List<dynamic>> getGymExercises() async {
     }
   }
 
-Future<List<dynamic>> fetchWorkout() async {
-  final token = await TokenService.getToken();
-  final response = await http.get(
-    Uri.parse('$baseUrl/v2/workouts/custom-workouts'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    },
-  );
-  if (response.statusCode == 200) {
-    return jsonDecode(response.body) as List<dynamic>;
-  } else {
-    throw Exception('Failed to fetch custom workout: ${response.body}');
+  Future<List<dynamic>> fetchWorkout() async {
+    final token = await TokenService.getToken();
+    final response = await http.get(
+      Uri.parse('$baseUrl/v2/workouts/custom-workouts'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as List<dynamic>;
+    } else {
+      throw Exception('Failed to fetch custom workout: ${response.body}');
+    }
   }
-}
 
   // store schedule workout
   Future<Map<String, dynamic>> storeScheduleWorkout(
@@ -674,7 +692,7 @@ Future<List<dynamic>> fetchWorkout() async {
     //   "scheduled_at": "2025-03-23 08:00:00"
     // }
 
-    if (response.statusCode == 200|| response.statusCode == 201) {
+    if (response.statusCode == 200 || response.statusCode == 201) {
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to store schedule workout: ${response.body}');
@@ -702,7 +720,23 @@ Future<List<dynamic>> fetchWorkout() async {
       throw Exception('Failed to update schedule workout: ${response.body}');
     }
   }
+// delete schedule workout
+  Future<void> deleteScheduleWorkout(int scheduleWorkoutId) async {
+    final token = await TokenService.getToken();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/v2/workouts/scheduled-workouts/$scheduleWorkoutId'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
 
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to delete schedule workout: ${response.body}');
+    }
+}
   //fetch schedule workout
   Future<Map<String, dynamic>> fetchScheduleWorkout(
     int scheduleWorkoutId,

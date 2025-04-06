@@ -17,13 +17,29 @@ class FoodDetailsScreen extends StatefulWidget {
 
 class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
   final TextEditingController _quantityController = TextEditingController();
+  final TextEditingController _customMealTimeController = TextEditingController();
   final ApiService _apiService = ApiService();
   bool _isStoringMeal = false;
   bool _isTogglingFavorite = false;
   String? _storeMealMessage;
   String? _selectedTime;
+  bool _isCustomMealTime = false;
   DateTime _selectedDate = DateTime.now();
   bool _isFavorite = false;
+
+  // Predefined meal time options
+  final List<String> _predefinedMealTimes = [
+    "Breakfast",
+    "Lunch",
+    "Dinner",
+    "Snack",
+    "Morning Snack",
+    "Afternoon Snack",
+    "Evening Snack",
+    "Pre-workout",
+    "Post-workout",
+    "Custom"
+  ];
 
   @override
   void initState() {
@@ -32,6 +48,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    final ThemeData theme = Theme.of(context);
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
@@ -39,12 +56,18 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
       lastDate: DateTime(2030),
       builder: (context, child) {
         return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Colors.blue.shade600,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
+          data: theme.copyWith(
+            colorScheme: theme.brightness == Brightness.dark
+                ? ColorScheme.dark(
+                    primary: Colors.blue.shade400,
+                    onPrimary: Colors.black,
+                    onSurface: Colors.white,
+                  )
+                : ColorScheme.light(
+                    primary: Colors.blue.shade600,
+                    onPrimary: Colors.white,
+                    onSurface: Colors.black,
+                  ),
           ),
           child: child!,
         );
@@ -66,12 +89,26 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
       ).showSnackBar(const SnackBar(content: Text("Please enter a quantity")));
       return;
     }
-    if (_selectedTime == null || _selectedTime!.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Please select a time")));
-      return;
+    
+    String? mealTime;
+    if (_isCustomMealTime) {
+      mealTime = _customMealTimeController.text.trim();
+      if (mealTime.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Please enter a meal time")));
+        return;
+      }
+    } else {
+      mealTime = _selectedTime;
+      if (mealTime == null || mealTime.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Please select a meal time")));
+        return;
+      }
     }
+    
     final double? quantity = double.tryParse(quantityText);
     if (quantity == null || quantity <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -79,7 +116,8 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
       );
       return;
     }
-    final mealTime = _selectedTime?.toLowerCase();
+    
+    final mealTimeValue = mealTime.toLowerCase();
     final mealDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
     setState(() {
       _isStoringMeal = true;
@@ -87,7 +125,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
     });
 
     try {
-      await _apiService.storeMeal(name, quantity, mealTime, mealDate);
+      await _apiService.storeMeal(name, quantity, mealTimeValue, mealDate);
       setState(() {
         _storeMealMessage = "Meal stored successfully!";
       });
@@ -137,18 +175,19 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? Colors.red.shade700 : Colors.green.shade700,
+        backgroundColor: isError 
+            ? Colors.red.shade700 
+            : Colors.green.shade700,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         duration: const Duration(seconds: 2),
-        action:
-            isError
-                ? SnackBarAction(
-                  label: 'Retry',
-                  textColor: Colors.white,
-                  onPressed: toggleFavoriteFood,
-                )
-                : null,
+        action: isError
+            ? SnackBarAction(
+                label: 'Retry',
+                textColor: Colors.white,
+                onPressed: toggleFavoriteFood,
+              )
+            : null,
       ),
     );
   }
@@ -156,17 +195,29 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
   @override
   void dispose() {
     _quantityController.dispose();
+    _customMealTimeController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool isDarkMode = theme.brightness == Brightness.dark;
+    final Color textColor = isDarkMode ? Colors.white : Colors.black;
+    final Color subTextColor = isDarkMode ? Colors.white70 : Colors.grey.shade600;
+    final Color cardColor = isDarkMode ? Colors.grey.shade900 : Colors.white;
+    final Color inputBgColor = isDarkMode ? Colors.grey.shade800 : Colors.grey.shade100;
+    final Color scaffoldBgColor = isDarkMode ? Colors.black : Colors.grey.shade100;
+    
     return Scaffold(
-      backgroundColor: Colors.grey.shade100,
+      backgroundColor: scaffoldBgColor,
       appBar: AppBar(
         title: Text(
           widget.food.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: textColor,
+          ),
         ),
         actions: [
           IconButton(
@@ -175,22 +226,21 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
               transitionBuilder: (Widget child, Animation<double> animation) {
                 return ScaleTransition(scale: animation, child: child);
               },
-              child:
-                  _isTogglingFavorite
-                      ? const SizedBox(
-                        key: ValueKey('loading'),
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.red,
-                        ),
-                      )
-                      : Icon(
-                        _isFavorite ? Icons.favorite : Icons.favorite_border,
-                        key: ValueKey(_isFavorite),
+              child: _isTogglingFavorite
+                  ? const SizedBox(
+                      key: ValueKey('loading'),
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
                         color: Colors.red,
                       ),
+                    )
+                  : Icon(
+                      _isFavorite ? Icons.favorite : Icons.favorite_border,
+                      key: ValueKey(_isFavorite),
+                      color: Colors.red,
+                    ),
             ),
             onPressed: _isTogglingFavorite ? null : toggleFavoriteFood,
             tooltip: _isFavorite ? 'Remove from favorites' : 'Add to favorites',
@@ -199,7 +249,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: Colors.black,
+        foregroundColor: textColor,
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -210,15 +260,20 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
               // Nutrition Facts Card
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: cardColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.shade300,
+                      color: isDarkMode 
+                          ? Colors.black54 
+                          : Colors.grey.shade300,
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ],
+                  border: isDarkMode 
+                      ? Border.all(color: Colors.grey.shade800, width: 1) 
+                      : null,
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
@@ -230,7 +285,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: textColor,
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -240,41 +295,47 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                           return Column(
                             children: [
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   _nutritionItem(
                                     Icons.local_fire_department,
                                     "Calories",
                                     "${widget.food.calories}",
-                                    Colors.red,
+                                    Colors.red.shade400,
+                                    isDarkMode,
+                                    subTextColor,
                                   ),
                                   SizedBox(width: spacing),
                                   _nutritionItem(
                                     Icons.fitness_center,
                                     "Protein",
                                     "${widget.food.protein}g",
-                                    Colors.blue,
+                                    Colors.blue.shade400,
+                                    isDarkMode,
+                                    subTextColor,
                                   ),
                                 ],
                               ),
                               SizedBox(height: spacing),
                               Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   _nutritionItem(
                                     Icons.grain,
                                     "Carbs",
                                     "${widget.food.carbs}g",
-                                    Colors.green,
+                                    Colors.green.shade400,
+                                    isDarkMode,
+                                    subTextColor,
                                   ),
                                   SizedBox(width: spacing),
                                   _nutritionItem(
                                     Icons.water_drop,
                                     "Fats",
                                     "${widget.food.fats}g",
-                                    Colors.orange,
+                                    Colors.orange.shade400,
+                                    isDarkMode,
+                                    subTextColor,
                                   ),
                                 ],
                               ),
@@ -291,15 +352,20 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
               // Add to Meal Card
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: cardColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.shade300,
+                      color: isDarkMode 
+                          ? Colors.black54 
+                          : Colors.grey.shade300,
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
                   ],
+                  border: isDarkMode 
+                      ? Border.all(color: Colors.grey.shade800, width: 1) 
+                      : null,
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(20.0),
@@ -311,7 +377,7 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                          color: textColor,
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -325,24 +391,25 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                             horizontal: 16,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
+                            color: inputBgColor,
                             borderRadius: BorderRadius.circular(12),
+                            border: isDarkMode 
+                                ? Border.all(color: Colors.grey.shade700) 
+                                : null,
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                DateFormat(
-                                  'EEE, MMM d, yyyy',
-                                ).format(_selectedDate),
+                                DateFormat('EEE, MMM d, yyyy').format(_selectedDate),
                                 style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.grey.shade600,
+                                  color: subTextColor,
                                 ),
                               ),
                               Icon(
                                 Icons.calendar_today,
-                                color: Colors.grey.shade600,
+                                color: subTextColor,
                               ),
                             ],
                           ),
@@ -351,76 +418,140 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
 
                       const SizedBox(height: 16),
 
-                      // Meal Time Dropdown
-                      DropdownButtonFormField<String>(
-                        value: _selectedTime,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.grey.shade100,
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 15,
-                            horizontal: 16,
+                      // Meal Time Selection
+                      if (!_isCustomMealTime)
+                        DropdownButtonFormField<String>(
+                          value: _selectedTime,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: inputBgColor,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 15,
+                              horizontal: 16,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: isDarkMode
+                                  ? BorderSide(color: Colors.grey.shade700)
+                                  : BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: isDarkMode
+                                  ? BorderSide(color: Colors.grey.shade700)
+                                  : BorderSide.none,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.access_time,
+                              color: subTextColor,
+                            ),
+                            hintText: "Select Meal Time",
+                            hintStyle: TextStyle(color: subTextColor),
                           ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          prefixIcon: Icon(
-                            Icons.access_time,
-                            color: Colors.grey.shade600,
-                          ),
-                          hintText: "Select Meal Time",
-                          hintStyle: TextStyle(color: Colors.grey.shade600),
+                          style: TextStyle(color: textColor),
+                          dropdownColor: cardColor,
+                          items: _predefinedMealTimes.map((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedTime = value;
+                              _isCustomMealTime = value == "Custom";
+                            });
+                          },
                         ),
-                        style: TextStyle(color: Colors.black),
-                        dropdownColor: Colors.white,
-                        items: const [
-                          DropdownMenuItem(
-                            value: "Breakfast",
-                            child: Text("Breakfast"),
-                          ),
-                          DropdownMenuItem(
-                            value: "Lunch",
-                            child: Text("Lunch"),
-                          ),
-                          DropdownMenuItem(
-                            value: "Dinner",
-                            child: Text("Dinner"),
-                          ),
-                          DropdownMenuItem(
-                            value: "Snack",
-                            child: Text("Snack"),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedTime = value;
-                          });
-                        },
-                      ),
+
+                      // Custom Meal Time Input
+                      if (_isCustomMealTime)
+                        Column(
+                          children: [
+                            TextField(
+                              controller: _customMealTimeController,
+                              style: TextStyle(color: textColor),
+                              decoration: InputDecoration(
+                                filled: true,
+                                fillColor: inputBgColor,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 15,
+                                  horizontal: 16,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: isDarkMode
+                                      ? BorderSide(color: Colors.grey.shade700)
+                                      : BorderSide.none,
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: isDarkMode
+                                      ? BorderSide(color: Colors.grey.shade700)
+                                      : BorderSide.none,
+                                ),
+                                prefixIcon: Icon(
+                                  Icons.access_time,
+                                  color: subTextColor,
+                                ),
+                                hintText: "Enter Custom Meal Time",
+                                hintStyle: TextStyle(color: subTextColor),
+                                suffixIcon: IconButton(
+                                  icon: Icon(Icons.close, color: subTextColor),
+                                  onPressed: () {
+                                    setState(() {
+                                      _isCustomMealTime = false;
+                                      _selectedTime = null;
+                                      _customMealTimeController.clear();
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Examples: Mid-morning, Late-night, Second Breakfast, etc.",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: subTextColor,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
+
                       const SizedBox(height: 16),
 
                       // Quantity Input
                       TextField(
                         controller: _quantityController,
                         keyboardType: TextInputType.number,
+                        style: TextStyle(color: textColor),
                         decoration: InputDecoration(
                           filled: true,
-                          fillColor: Colors.grey.shade100,
+                          fillColor: inputBgColor,
                           contentPadding: const EdgeInsets.symmetric(
                             vertical: 15,
                             horizontal: 16,
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+                            borderSide: isDarkMode
+                                ? BorderSide(color: Colors.grey.shade700)
+                                : BorderSide.none,
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: isDarkMode
+                                ? BorderSide(color: Colors.grey.shade700)
+                                : BorderSide.none,
                           ),
                           prefixIcon: Icon(
                             Icons.scale,
-                            color: Colors.grey.shade600,
+                            color: subTextColor,
                           ),
                           hintText: "Quantity (grams)",
-                          hintStyle: TextStyle(color: Colors.grey.shade600),
+                          hintStyle: TextStyle(color: subTextColor),
                         ),
                       ),
 
@@ -433,23 +564,24 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                           onPressed: _isStoringMeal ? null : _storeMeal,
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 15),
+                            foregroundColor: Colors.white,
+                            backgroundColor: theme.colorScheme.primary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             elevation: 3,
                           ),
-                          child:
-                              _isStoringMeal
-                                  ? const CircularProgressIndicator(
-                                    color: Colors.white,
-                                  )
-                                  : const Text(
-                                    "Add to Meal",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                          child: _isStoringMeal
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : const Text(
+                                  "Add to Meal",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
                                   ),
+                                ),
                         ),
                       ),
 
@@ -460,20 +592,25 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color:
-                                  _storeMealMessage!.startsWith("Error")
-                                      ? Colors.red.shade100
-                                      : Colors.green.shade100,
+                              color: _storeMealMessage!.startsWith("Error")
+                                  ? (isDarkMode ? Colors.red.shade900 : Colors.red.shade100)
+                                  : (isDarkMode ? Colors.green.shade900 : Colors.green.shade100),
                               borderRadius: BorderRadius.circular(12),
+                              border: isDarkMode
+                                  ? Border.all(
+                                      color: _storeMealMessage!.startsWith("Error")
+                                          ? Colors.red.shade800
+                                          : Colors.green.shade800,
+                                    )
+                                  : null,
                             ),
                             child: Text(
                               _storeMealMessage!,
                               style: TextStyle(
                                 fontSize: 16,
-                                color:
-                                    _storeMealMessage!.startsWith("Error")
-                                        ? Colors.red.shade800
-                                        : Colors.green.shade800,
+                                color: _storeMealMessage!.startsWith("Error")
+                                    ? (isDarkMode ? Colors.red.shade200 : Colors.red.shade800)
+                                    : (isDarkMode ? Colors.green.shade200 : Colors.green.shade800),
                               ),
                             ),
                           ),
@@ -494,13 +631,21 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
     String label,
     String value,
     Color color,
+    bool isDarkMode,
+    Color labelColor,
   ) {
+    // Adjust color for better visibility in dark mode
+    Color itemColor = isDarkMode ? color.withOpacity(0.8) : color;
+    
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: itemColor.withOpacity(isDarkMode ? 0.2 : 0.1),
           borderRadius: BorderRadius.circular(12),
+          border: isDarkMode 
+              ? Border.all(color: itemColor.withOpacity(0.3)) 
+              : null,
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
@@ -510,10 +655,10 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.2),
+                  color: itemColor.withOpacity(isDarkMode ? 0.3 : 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: color),
+                child: Icon(icon, color: itemColor),
               ),
               const SizedBox(width: 12),
               Column(
@@ -521,14 +666,14 @@ class _FoodDetailsScreenState extends State<FoodDetailsScreen> {
                 children: [
                   Text(
                     label,
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 14, color: labelColor),
                   ),
                   Text(
                     value,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: color,
+                      color: itemColor,
                     ),
                   ),
                 ],

@@ -27,9 +27,15 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
   bool _isLoadingExercises = true;
   String? _errorMessage;
 
-  // Custom app colors
+  // App colors - updated for dark theme compatibility
   late Color _primaryColor;
   late Color _accentColor;
+  late Color _cardColor;
+  late Color _surfaceColor;
+  late Color _textPrimaryColor;
+  late Color _textSecondaryColor;
+  late Color _borderColor;
+  late Color _errorColor;
 
   @override
   void initState() {
@@ -44,37 +50,52 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
     super.dispose();
   }
 
-Future<void> _fetchGymExercises() async {
-  setState(() {
-    _isLoadingExercises = true;
-    _errorMessage = null;
-  });
-
-  try {
-    final List<dynamic> exercises = await _apiService.getGymExercises();
-    setState(() {
-      _gymExercises = exercises.map((exercise) {
-        return {
-          'id': exercise['id'],
-          'name': exercise['name'],
-          'description': exercise['description'],
-          'body_part': exercise['body_part'],
-          'equipment': exercise['equipment'],
-          'level': exercise['level'],
-          'type': exercise['type'],
-        };
-      }).toList();
-
-      _isLoadingExercises = false;
-    });
-  } catch (e) {
-    setState(() {
-      _errorMessage = 'Failed to load exercises: ${e.toString()}';
-      debugPrint('Failed to load exercises: ${e.toString()}');
-      _isLoadingExercises = false;
-    });
+  // Initialize colors based on the current theme
+  void _initializeColors(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    
+    _primaryColor = isDark ? Colors.blueGrey.shade600 : Colors.blueGrey;
+    _accentColor = isDark ? Colors.tealAccent.shade700 : Colors.blue;
+    _cardColor = isDark ? Colors.grey.shade900 : theme.cardColor;
+    _surfaceColor = isDark ? Colors.grey.shade800 : theme.colorScheme.surfaceVariant;
+    _textPrimaryColor = isDark ? Colors.white : theme.colorScheme.onSurface;
+    _textSecondaryColor = isDark ? Colors.grey.shade300 : theme.colorScheme.onSurfaceVariant;
+    _borderColor = isDark ? Colors.grey.shade700 : theme.colorScheme.outlineVariant.withOpacity(0.5);
+    _errorColor = isDark ? Colors.red.shade300 : Colors.red;
   }
-}
+
+  Future<void> _fetchGymExercises() async {
+    setState(() {
+      _isLoadingExercises = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final List<dynamic> exercises = await _apiService.getGymExercises();
+      setState(() {
+        _gymExercises =
+            exercises.map((exercise) {
+              return {
+                'id': exercise['id'],
+                'name': exercise['name'],
+                'description': exercise['description'],
+                'body_part': exercise['body_part'],
+                'equipment': exercise['equipment'],
+                'level': exercise['level'],
+                'type': exercise['type'],
+              };
+            }).toList();
+
+        _isLoadingExercises = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to load exercises: ${e.toString()}';
+        debugPrint('Failed to load exercises: ${e.toString()}');
+        _isLoadingExercises = false;
+      });
+    }
+  }
 
   Future<void> _saveWorkout() async {
     if (!_formKey.currentState!.validate()) {
@@ -83,9 +104,9 @@ Future<void> _fetchGymExercises() async {
 
     if (_selectedExercises.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please add at least one exercise to your workout'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text('Please add at least one exercise to your workout'),
+          backgroundColor: _errorColor,
         ),
       );
       return;
@@ -158,20 +179,23 @@ Future<void> _fetchGymExercises() async {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    // Initialize custom colors to match workout calendar screen
-    _primaryColor = Colors.blueGrey;
-    _accentColor = Colors.blue;
+    
+    // Initialize colors based on current theme
+    _initializeColors(theme);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Create New Workout'),
+        title: Text(
+          'Create New Workout',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: _textPrimaryColor,
+          ),
+        ),
         elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        backgroundColor: _primaryColor.withOpacity(0.1),
-        foregroundColor: _primaryColor,
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        foregroundColor: _textPrimaryColor,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -186,13 +210,13 @@ Future<void> _fetchGymExercises() async {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: _primaryColor,
+                    color: _accentColor,
                   ),
                 ),
               ),
             ),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: _accentColor),
             onPressed: _fetchGymExercises,
             tooltip: 'Refresh exercise list',
           ),
@@ -233,30 +257,33 @@ Future<void> _fetchGymExercises() async {
           'Workout Details',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            color: _primaryColor,
+            color: _accentColor,
           ),
         ),
         const SizedBox(height: 16),
         TextFormField(
           controller: _nameController,
+          style: TextStyle(color: _textPrimaryColor),
           decoration: InputDecoration(
             labelText: 'Workout Name',
+            labelStyle: TextStyle(color: _textSecondaryColor),
             hintText: 'e.g., Upper Body Strength',
+            hintStyle: TextStyle(color: _textSecondaryColor.withOpacity(0.7)),
             filled: true,
-            fillColor: theme.colorScheme.surfaceVariant,
+            fillColor: _surfaceColor,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.outlineVariant.withOpacity(0.5),
-              ),
+              borderSide: BorderSide(color: _borderColor),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.outlineVariant.withOpacity(0.5),
-              ),
+              borderSide: BorderSide(color: _borderColor),
             ),
-            prefixIcon: Icon(Icons.fitness_center, color: _primaryColor),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: _accentColor, width: 2),
+            ),
+            prefixIcon: Icon(Icons.fitness_center, color: _accentColor),
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
@@ -268,24 +295,27 @@ Future<void> _fetchGymExercises() async {
         const SizedBox(height: 16),
         TextFormField(
           controller: _descriptionController,
+          style: TextStyle(color: _textPrimaryColor),
           decoration: InputDecoration(
             labelText: 'Description',
+            labelStyle: TextStyle(color: _textSecondaryColor),
             hintText: 'Focus of this workout, target muscle groups, etc.',
+            hintStyle: TextStyle(color: _textSecondaryColor.withOpacity(0.7)),
             filled: true,
-            fillColor: theme.colorScheme.surfaceVariant,
+            fillColor: _surfaceColor,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.outlineVariant.withOpacity(0.5),
-              ),
+              borderSide: BorderSide(color: _borderColor),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: theme.colorScheme.outlineVariant.withOpacity(0.5),
-              ),
+              borderSide: BorderSide(color: _borderColor),
             ),
-            prefixIcon: Icon(Icons.description, color: _primaryColor),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: _accentColor, width: 2),
+            ),
+            prefixIcon: Icon(Icons.description, color: _accentColor),
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
@@ -310,7 +340,7 @@ Future<void> _fetchGymExercises() async {
               'Exercises',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: _primaryColor,
+                color: _accentColor,
               ),
             ),
             TextButton.icon(
@@ -326,9 +356,7 @@ Future<void> _fetchGymExercises() async {
         const SizedBox(height: 8),
         Text(
           'Add exercises and configure sets, reps, and rest periods',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          style: TextStyle(color: _textSecondaryColor),
         ),
         const SizedBox(height: 16),
 
@@ -358,23 +386,21 @@ Future<void> _fetchGymExercises() async {
             Icon(
               Icons.fitness_center_outlined,
               size: 64,
-              color: _primaryColor.withOpacity(0.3),
+              color: _accentColor.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
             Text(
               'No exercises added yet',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: _primaryColor,
+                color: _accentColor,
               ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               'Add exercises to create your custom workout',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+              style: TextStyle(color: _textSecondaryColor),
               textAlign: TextAlign.center,
             ),
           ],
@@ -389,12 +415,11 @@ Future<void> _fetchGymExercises() async {
     int index,
   ) {
     return Card(
-      elevation: 0,
+      elevation: 4,
+      color: _cardColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: theme.colorScheme.outlineVariant.withOpacity(0.5),
-        ),
+        side: BorderSide(color: _borderColor),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -411,21 +436,20 @@ Future<void> _fetchGymExercises() async {
                         exercise['name'],
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: _textPrimaryColor,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '${exercise['body_part']} • ${exercise['level']}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                        style: TextStyle(color: _textSecondaryColor),
                       ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  icon: Icon(Icons.delete_outline, color: _errorColor),
                   onPressed: () => _removeExercise(index),
                   tooltip: 'Remove exercise',
                 ),
@@ -441,37 +465,16 @@ Future<void> _fetchGymExercises() async {
                     children: [
                       Text(
                         'Sets',
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
+                          color: _textPrimaryColor,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      DropdownButtonFormField<int>(
+                      _buildDropdown(
+                        theme,
                         value: exercise['sets'],
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: theme.colorScheme.outlineVariant,
-                            ),
-                          ),
-                        ),
-                        items:
-                            List.generate(10, (i) => i + 1)
-                                .map(
-                                  (i) => DropdownMenuItem(
-                                    value: i,
-                                    child: Text('$i'),
-                                  ),
-                                )
-                                .toList(),
+                        items: List.generate(10, (i) => i + 1),
                         onChanged: (value) {
                           if (value != null) {
                             _updateExerciseDetails(index, 'sets', value);
@@ -490,37 +493,16 @@ Future<void> _fetchGymExercises() async {
                     children: [
                       Text(
                         'Reps',
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
+                          color: _textPrimaryColor,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      DropdownButtonFormField<int>(
+                      _buildDropdown(
+                        theme,
                         value: exercise['reps'],
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: theme.colorScheme.outlineVariant,
-                            ),
-                          ),
-                        ),
-                        items:
-                            [8, 10, 12, 15, 20]
-                                .map(
-                                  (i) => DropdownMenuItem(
-                                    value: i,
-                                    child: Text('$i'),
-                                  ),
-                                )
-                                .toList(),
+                        items: [8, 10, 12, 15, 20],
                         onChanged: (value) {
                           if (value != null) {
                             _updateExerciseDetails(index, 'reps', value);
@@ -539,37 +521,16 @@ Future<void> _fetchGymExercises() async {
                     children: [
                       Text(
                         'Rest (sec)',
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
+                          color: _textPrimaryColor,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      DropdownButtonFormField<int>(
+                      _buildDropdown(
+                        theme,
                         value: exercise['rest'],
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                            borderSide: BorderSide(
-                              color: theme.colorScheme.outlineVariant,
-                            ),
-                          ),
-                        ),
-                        items:
-                            [30, 45, 60, 90, 120]
-                                .map(
-                                  (i) => DropdownMenuItem(
-                                    value: i,
-                                    child: Text('$i'),
-                                  ),
-                                )
-                                .toList(),
+                        items: [30, 45, 60, 90, 120],
                         onChanged: (value) {
                           if (value != null) {
                             _updateExerciseDetails(index, 'rest', value);
@@ -587,124 +548,191 @@ Future<void> _fetchGymExercises() async {
     );
   }
 
-void _showExerciseSelector(BuildContext context) {
-  // Local state for filtering the exercises in the bottom sheet
-  String exerciseSearchTerm = "";
-  
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (context) {
-      // Use a StatefulBuilder to update the search term within the bottom sheet
-      return StatefulBuilder(
-        builder: (BuildContext context, StateSetter setModalState) {
-          // Filter exercises based on the search term (case-insensitive)
-            final List<Map<String, dynamic>> filteredExercises = _gymExercises
-              .where((exercise) =>
-                exercise['name'].toLowerCase().contains(exerciseSearchTerm.toLowerCase()) ||
-                exercise['body_part'].toLowerCase().contains(exerciseSearchTerm.toLowerCase()) ||
-                exercise['equipment'].toLowerCase().contains(exerciseSearchTerm.toLowerCase()) ||
-                exercise['level'].toLowerCase().contains(exerciseSearchTerm.toLowerCase()) ||
-                exercise['type'].toLowerCase().contains(exerciseSearchTerm.toLowerCase()) )
-              .toList();
-          
-          return Container(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'Select Exercises',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: _primaryColor,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Search box
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search exercises...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade100,
-                  ),
-                  onChanged: (value) {
-                    // Update the search term and rebuild the bottom sheet
-                    setModalState(() {
-                      exerciseSearchTerm = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Exercise list
-                Expanded(
-                  child: _isLoadingExercises
-                      ? Center(
-                          child: CircularProgressIndicator(
-                            color: _accentColor,
+  // Helper method for consistent dropdowns
+  Widget _buildDropdown(
+    ThemeData theme, {
+    required int value,
+    required List<int> items,
+    required Function(int?) onChanged,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: _borderColor),
+        color: _surfaceColor,
+      ),
+      child: DropdownButtonFormField<int>(
+        value: value,
+        dropdownColor: _cardColor,
+        style: TextStyle(color: _textPrimaryColor),
+        decoration: InputDecoration(
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 8,
+          ),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+        ),
+        icon: Icon(Icons.arrow_drop_down, color: _accentColor),
+        items: items
+            .map(
+              (i) => DropdownMenuItem(
+                value: i,
+                child: Text('$i'),
+              ),
+            )
+            .toList(),
+        onChanged: onChanged,
+      ),
+    );
+  }
+
+  void _showExerciseSelector(BuildContext context) {
+    // Local state for filtering the exercises in the bottom sheet
+    String exerciseSearchTerm = "";
+    final theme = Theme.of(context);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: theme.scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        // Use a StatefulBuilder to update the search term within the bottom sheet
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            // Filter exercises based on the search term (case-insensitive)
+            final List<Map<String, dynamic>> filteredExercises =
+                _gymExercises
+                    .where(
+                      (exercise) =>
+                          exercise['name'].toLowerCase().contains(
+                            exerciseSearchTerm.toLowerCase(),
+                          ) ||
+                          exercise['body_part'].toLowerCase().contains(
+                            exerciseSearchTerm.toLowerCase(),
+                          ) ||
+                          exercise['equipment'].toLowerCase().contains(
+                            exerciseSearchTerm.toLowerCase(),
+                          ) ||
+                          exercise['level'].toLowerCase().contains(
+                            exerciseSearchTerm.toLowerCase(),
+                          ) ||
+                          exercise['type'].toLowerCase().contains(
+                            exerciseSearchTerm.toLowerCase(),
                           ),
-                        )
-                      : filteredExercises.isEmpty
-                          ? Center(
-                              child: Text(
-                                'No exercises found',
-                                style: TextStyle(color: _primaryColor),
+                    )
+                    .toList();
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.8,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Select Exercises',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: _accentColor,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: Icon(Icons.close, color: _textPrimaryColor),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Search box
+                  TextField(
+                    style: TextStyle(color: _textPrimaryColor),
+                    decoration: InputDecoration(
+                      hintText: 'Search exercises...',
+                      hintStyle: TextStyle(color: _textSecondaryColor),
+                      prefixIcon: Icon(Icons.search, color: _accentColor),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: _borderColor),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: _borderColor),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: _accentColor, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: _surfaceColor,
+                    ),
+                    onChanged: (value) {
+                      // Update the search term and rebuild the bottom sheet
+                      setModalState(() {
+                        exerciseSearchTerm = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  // Exercise list
+                  Expanded(
+                    child:
+                        _isLoadingExercises
+                            ? Center(
+                              child: CircularProgressIndicator(
+                                color: _accentColor,
                               ),
                             )
-                          : ListView.separated(
+                            : filteredExercises.isEmpty
+                            ? Center(
+                              child: Text(
+                                'No exercises found',
+                                style: TextStyle(color: _accentColor),
+                              ),
+                            )
+                            : ListView.separated(
                               itemCount: filteredExercises.length,
-                              separatorBuilder: (context, index) =>
-                                  const Divider(),
+                              separatorBuilder:
+                                  (context, index) => Divider(color: _borderColor),
                               itemBuilder: (context, index) {
                                 final exercise = filteredExercises[index];
                                 final bool isAlreadyAdded = _selectedExercises
                                     .any((e) => e['id'] == exercise['id']);
-                                
+
                                 return ListTile(
                                   title: Text(
                                     exercise['name'],
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.bold,
+                                      color: _textPrimaryColor,
                                     ),
                                   ),
                                   subtitle: Text(
                                     '${exercise['body_part']} • ${exercise['equipment']} • ${exercise['level']}',
-                                    style: TextStyle(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
+                                    style: TextStyle(color: _textSecondaryColor),
                                   ),
-                                  trailing: isAlreadyAdded
-                                      ? const Icon(
-                                          Icons.check_circle,
-                                          color: Colors.green,
-                                        )
-                                      : IconButton(
-                                          icon: const Icon(
-                                              Icons.add_circle_outline),
-                                          color: _accentColor,
-                                          onPressed: () {
-                                            _addExercise(exercise);
-                                            Navigator.pop(context);
-                                          },
-                                        ),
+                                  trailing:
+                                      isAlreadyAdded
+                                          ? const Icon(
+                                            Icons.check_circle,
+                                            color: Colors.green,
+                                          )
+                                          : IconButton(
+                                            icon: const Icon(
+                                              Icons.add_circle_outline,
+                                            ),
+                                            color: _accentColor,
+                                            onPressed: () {
+                                              _addExercise(exercise);
+                                              Navigator.pop(context);
+                                            },
+                                          ),
                                   onTap: () {
                                     if (!isAlreadyAdded) {
                                       _addExercise(exercise);
@@ -714,15 +742,15 @@ void _showExerciseSelector(BuildContext context) {
                                 );
                               },
                             ),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-    },
-  );
-}
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   Widget _buildBottomBar(ThemeData theme) {
     return Container(
@@ -731,9 +759,9 @@ void _showExerciseSelector(BuildContext context) {
         color: theme.scaffoldBackgroundColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 5,
-            offset: const Offset(0, -1),
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
@@ -747,9 +775,9 @@ void _showExerciseSelector(BuildContext context) {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                side: BorderSide(color: _primaryColor),
+                side: BorderSide(color: _accentColor),
               ),
-              child: Text('Cancel', style: TextStyle(color: _primaryColor)),
+              child: Text('Cancel', style: TextStyle(color: _accentColor)),
             ),
           ),
           const SizedBox(width: 16),
@@ -780,7 +808,7 @@ void _showExerciseSelector(BuildContext context) {
           const SizedBox(height: 16),
           Text(
             'Saving your workout...',
-            style: TextStyle(color: _primaryColor),
+            style: TextStyle(color: _accentColor),
           ),
         ],
       ),
@@ -792,14 +820,14 @@ void _showExerciseSelector(BuildContext context) {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
+          Icon(Icons.error_outline, size: 64, color: _errorColor),
           const SizedBox(height: 16),
           Text(
             'Error Creating Workout',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.red.shade300,
+              color: _errorColor,
             ),
           ),
           const SizedBox(height: 8),
@@ -807,7 +835,7 @@ void _showExerciseSelector(BuildContext context) {
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(
               _errorMessage ?? 'An unknown error occurred',
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(color: _textSecondaryColor),
               textAlign: TextAlign.center,
             ),
           ),

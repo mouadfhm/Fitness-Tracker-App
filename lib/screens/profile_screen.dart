@@ -6,17 +6,17 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fitness_tracker_app/providers/profile_provider.dart';
-import 'package:fitness_tracker_app/services/api_service.dart'; // New import
-import 'package:image_picker/image_picker.dart'; // New import for image selection
+import 'package:fitness_tracker_app/services/api_service.dart';
+import 'package:image_picker/image_picker.dart';
 import 'update_profile_screen.dart';
 import 'home_screen.dart';
 import 'workout/workout_calendar_screen.dart';
 import 'foods_screen.dart';
 import 'progress_screen.dart';
 import 'widgets/bottom_nav_bar.dart';
-import 'settings_screen.dart'; // New import
-import 'help_support_screen.dart'; // New import
-import 'achievements_screen.dart'; // New import
+import 'settings_screen.dart';
+import 'help_support_screen.dart';
+import 'achievements_screen.dart';
 import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -50,10 +50,8 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _loadSettings() async {
-    setState(() {
-    });
+    setState(() {});
   }
-
 
   void _onNavBarTap(int index) {
     if (index == _currentIndex) return;
@@ -65,9 +63,8 @@ class _ProfileScreenState extends State<ProfileScreen>
       const ProfileScreen(),
     ];
 
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => routes[index]));
+    Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => routes[index]));
   }
 
   void _goToProfileEdit(Map<String, dynamic> profileData) {
@@ -124,19 +121,18 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (mounted) {
         showDialog(
           context: context,
-          builder:
-              (context) => AlertDialog(
-                title: const Text('Error'),
-                content: const Text(
-                  'Failed to select image. Please try again.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('OK'),
-                  ),
-                ],
+          builder: (context) => AlertDialog(
+            title: const Text('Error'),
+            content: const Text(
+              'Failed to select image. Please try again.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
               ),
+            ],
+          ),
         );
       }
     }
@@ -180,7 +176,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-
   void _launchPrivacyPolicy() async {
     // const url = 'https://yourapp.com/privacy-policy';
     // if (await canLaunch(url)) {
@@ -190,27 +185,31 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           "Profile",
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
         ),
         actions: [
           IconButton(
             onPressed: _goToSettings,
-            icon: const Icon(Icons.settings),
+            icon: Icon(Icons.settings, color: colorScheme.onSurface),
             tooltip: 'Settings',
           ),
           Consumer<ProfileProvider>(
             builder: (context, provider, child) {
               // Only show edit button when profile data exists.
               return IconButton(
-                onPressed:
-                    provider.profileData != null
-                        ? () => _goToProfileEdit(provider.profileData!)
-                        : null,
-                icon: const Icon(Icons.edit),
+                onPressed: provider.profileData != null
+                    ? () => _goToProfileEdit(provider.profileData!)
+                    : null,
+                icon: Icon(Icons.edit, color: colorScheme.onSurface),
                 tooltip: 'Edit Profile',
               );
             },
@@ -219,17 +218,18 @@ class _ProfileScreenState extends State<ProfileScreen>
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
+          labelColor: colorScheme.primary,
+          unselectedLabelColor: colorScheme.onSurface.withOpacity(0.7),
+          indicatorColor: colorScheme.primary,
           tabs: const [
             Tab(text: "Profile"),
-            // Tab(text: "Stats"),
             Tab(text: "Activity"),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [_buildProfileTab(),  _buildActivityTab()],
-        // children: [_buildProfileTab(), _buildStatsTab(), _buildActivityTab()],
+        children: [_buildProfileTab(), _buildActivityTab()],
       ),
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _currentIndex,
@@ -239,10 +239,15 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildProfileTab() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Consumer<ProfileProvider>(
       builder: (context, provider, child) {
         if (provider.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(child: CircularProgressIndicator(
+            color: colorScheme.primary,
+          ));
         } else if (provider.profileData != null) {
           final profileData = provider.profileData!;
           return SingleChildScrollView(
@@ -253,36 +258,47 @@ class _ProfileScreenState extends State<ProfileScreen>
                 Stack(
                   alignment: Alignment.bottomRight,
                   children: [
-                    GestureDetector(
-                      onTap: _selectProfileImage,
-                      child: CircleAvatar(
-                        radius: 50,
-                        backgroundImage:
-                            profileData['custom_profile_pic'] != null
-                                ? FileImage(
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: colorScheme.primary,
+                          width: 3,
+                        ),
+                      ),
+                      child: GestureDetector(
+                        onTap: _selectProfileImage,
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundImage: profileData['custom_profile_pic'] != null
+                              ? FileImage(
                                   File(profileData['custom_profile_pic']),
                                 )
-                                : AssetImage(
-                                      profileData['gender'] == "male"
-                                          ? profileData['weight'] > 100
-                                              ? 'lib/assets/gorilla.png'
-                                              : 'lib/assets/dog.png'
-                                          : profileData['weight'] > 80
+                              : AssetImage(
+                                  profileData['gender'] == "male"
+                                      ? profileData['weight'] > 100
+                                          ? 'lib/assets/gorilla.png'
+                                          : 'lib/assets/dog.png'
+                                      : profileData['weight'] > 80
                                           ? 'lib/assets/penguin.png'
                                           : 'lib/assets/rabbit.png',
-                                    )
-                                    as ImageProvider,
+                                ) as ImageProvider,
+                        ),
                       ),
                     ),
                     Container(
                       decoration: BoxDecoration(
-                        color: Theme.of(context).primaryColor,
+                        color: colorScheme.primary,
                         shape: BoxShape.circle,
+                        border: Border.all(
+                          color: colorScheme.surface,
+                          width: 2,
+                        ),
                       ),
                       child: IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.camera_alt,
-                          color: Colors.white,
+                          color: colorScheme.onPrimary,
                           size: 20,
                         ),
                         onPressed: _selectProfileImage,
@@ -294,14 +310,18 @@ class _ProfileScreenState extends State<ProfileScreen>
                 // Profile Name
                 Text(
                   profileData['name'],
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
                   ),
                 ),
                 Text(
                   profileData['email'],
-                  style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 16, 
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                  ),
                 ),
                 const SizedBox(height: 8),
                 // Membership badge
@@ -311,13 +331,21 @@ class _ProfileScreenState extends State<ProfileScreen>
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.blue[100],
+                    color: isDarkMode
+                        ? colorScheme.primary.withOpacity(0.2)
+                        : Colors.blue[100],
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDarkMode
+                          ? colorScheme.primary
+                          : Colors.blue[300]!,
+                      width: 1,
+                    ),
                   ),
                   child: Text(
                     profileData['membership_type'] ?? 'Free Member',
                     style: TextStyle(
-                      color: Colors.blue[800],
+                      color: isDarkMode ? colorScheme.primary : Colors.blue[800],
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -326,8 +354,16 @@ class _ProfileScreenState extends State<ProfileScreen>
                 // Profile Information Cards
                 Card(
                   elevation: 3,
+                  color: colorScheme.surface,
+                  shadowColor: isDarkMode ? Colors.black : Colors.grey[300],
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                      color: isDarkMode
+                          ? colorScheme.onSurface.withOpacity(0.1)
+                          : Colors.transparent,
+                      width: 1,
+                    ),
                   ),
                   child: Column(
                     children: [
@@ -404,8 +440,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       Icons.logout,
                       "Logout",
                       _showLogoutConfirmation,
-                      color: Colors.red[100],
-                      iconColor: Colors.red,
+                      isLogout: true,
                     ),
                   ],
                 ),
@@ -413,7 +448,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                 // App Version
                 Text(
                   "App version: 1.2.3",
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  style: TextStyle(
+                    color: colorScheme.onSurface.withOpacity(0.5),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -425,7 +463,10 @@ class _ProfileScreenState extends State<ProfileScreen>
               children: [
                 Text(
                   "Error: ${provider.errorMessage}",
-                  style: const TextStyle(color: Colors.red, fontSize: 16),
+                  style: TextStyle(
+                    color: colorScheme.error,
+                    fontSize: 16,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
@@ -435,6 +476,10 @@ class _ProfileScreenState extends State<ProfileScreen>
                       listen: false,
                     ).fetchProfile();
                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                  ),
                   child: const Text("Retry"),
                 ),
               ],
@@ -445,142 +490,20 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  // Widget _buildStatsTab() {
-  //   return Consumer<ProfileProvider>(
-  //     builder: (context, provider, child) {
-  //       if (provider.isLoading) {
-  //         return const Center(child: CircularProgressIndicator());
-  //       } else if (provider.profileData != null) {
-  //         return SingleChildScrollView(
-  //           padding: const EdgeInsets.all(16.0),
-  //           child: Column(
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               const Text(
-  //                 "Your Fitness Stats",
-  //                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-  //               ),
-  //               const SizedBox(height: 16),
-  //               // BMI Card
-  //               _buildStatsCard(
-  //                 "BMI",
-  //                 _calculateBMI(
-  //                   (provider.profileData!['weight'] as num).toDouble(),
-  //                   (provider.profileData!['height'] as num).toDouble(),
-  //                 ).toStringAsFixed(1),
-  //                 _getBMICategory(
-  //                   _calculateBMI(
-  //                     (provider.profileData!['weight'] as num).toDouble(),
-  //                     (provider.profileData!['height'] as num).toDouble(),
-  //                   ),
-  //                 ),
-  //                 Icons.health_and_safety,
-  //                 _getBMIColor(
-  //                   _calculateBMI(
-  //                     (provider.profileData!['weight'] as num).toDouble(),
-  //                     (provider.profileData!['height'] as num).toDouble(),
-  //                   ),
-  //                 ),
-  //               ),
-  //               const SizedBox(height: 16),
-  //               // Weekly Summary
-  //               const Text(
-  //                 "Weekly Summary",
-  //                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-  //               ),
-  //               const SizedBox(height: 8),
-  //               // Summary Stats
-  //               Row(
-  //                 children: [
-  //                   Expanded(
-  //                     child: _buildStatItem(
-  //                       "Workouts",
-  //                       "12",
-  //                       Icons.fitness_center,
-  //                       Colors.orange,
-  //                     ),
-  //                   ),
-  //                   Expanded(
-  //                     child: _buildStatItem(
-  //                       "Calories",
-  //                       "8,540",
-  //                       Icons.local_fire_department,
-  //                       Colors.red,
-  //                     ),
-  //                   ),
-  //                   Expanded(
-  //                     child: _buildStatItem(
-  //                       "Steps",
-  //                       "58,423",
-  //                       Icons.directions_walk,
-  //                       Colors.green,
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //               const SizedBox(height: 24),
-  //               // Goals Progress
-  //               const Text(
-  //                 "Goals Progress",
-  //                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-  //               ),
-  //               const SizedBox(height: 16),
-  //               _buildProgressBar(
-  //                 "Weight Goal",
-  //                 "${provider.profileData!['weight']} kg",
-  //                 "${provider.profileData!['target_weight'] ?? (provider.profileData!['weight'] - 5)} kg",
-  //                 0.6,
-  //               ),
-  //               const SizedBox(height: 12),
-  //               _buildProgressBar(
-  //                 "Workout Frequency",
-  //                 "3 days/week",
-  //                 "5 days/week",
-  //                 0.6,
-  //               ),
-  //               const SizedBox(height: 12),
-  //               _buildProgressBar(
-  //                 "Daily Steps",
-  //                 "8,340 steps",
-  //                 "10,000 steps",
-  //                 0.83,
-  //               ),
-  //               const SizedBox(height: 24),
-  //               Center(
-  //                 child: ElevatedButton.icon(
-  //                   onPressed: _goToProgressScreen,
-  //                   icon: const Icon(Icons.analytics),
-  //                   label: const Text("View Detailed Stats"),
-  //                   style: ElevatedButton.styleFrom(
-  //                     padding: const EdgeInsets.symmetric(
-  //                       horizontal: 24,
-  //                       vertical: 12,
-  //                     ),
-  //                   ),
-  //                 ),
-  //               ),
-  //             ],
-  //           ),
-  //         );
-  //       } else {
-  //         return Center(
-  //           child: Text(
-  //             "Error: ${provider.errorMessage}",
-  //             style: const TextStyle(color: Colors.red, fontSize: 16),
-  //           ),
-  //         );
-  //       }
-  //     },
-  //   );
-  // }
-
   Widget _buildActivityTab() {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
-        const Text(
+        Text(
           "Recent Activity",
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
         ),
         const SizedBox(height: 16),
         _buildActivityItem(
@@ -637,6 +560,9 @@ class _ProfileScreenState extends State<ProfileScreen>
             onPressed: () {
               // View more activity
             },
+            style: TextButton.styleFrom(
+              foregroundColor: colorScheme.primary,
+            ),
             child: const Text("View More Activity"),
           ),
         ),
@@ -644,16 +570,29 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  // Helper Functions
-
-
   // Helper UI Builders
-
   Widget _buildProfileTile(IconData icon, String title, String value) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return ListTile(
-      leading: Icon(icon, color: Colors.blue),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text(value, style: TextStyle(color: Colors.grey[700])),
+      leading: Icon(
+        icon,
+        color: colorScheme.primary,
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          color: colorScheme.onSurface,
+        ),
+      ),
+      subtitle: Text(
+        value,
+        style: TextStyle(
+          color: colorScheme.onSurface.withOpacity(0.7),
+        ),
+      ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
@@ -662,28 +601,51 @@ class _ProfileScreenState extends State<ProfileScreen>
     IconData icon,
     String label,
     VoidCallback onTap, {
-    Color? color,
-    Color? iconColor,
+    bool isLogout = false,
   }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    Color bgColor;
+    Color iconTextColor;
+    
+    if (isLogout) {
+      bgColor = isDarkMode
+          ? Colors.red.withOpacity(0.2)
+          : Colors.red[100]!;
+      iconTextColor = Colors.red;
+    } else {
+      bgColor = isDarkMode
+          ? colorScheme.primary.withOpacity(0.15)
+          : colorScheme.primary.withOpacity(0.1);
+      iconTextColor = colorScheme.primary;
+    }
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         decoration: BoxDecoration(
-          color: color ?? Colors.blue[50],
+          color: bgColor,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDarkMode
+                ? iconTextColor.withOpacity(0.3)
+                : Colors.transparent,
+            width: 1,
+          ),
         ),
         padding: const EdgeInsets.all(8),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: iconColor ?? Colors.blue, size: 30),
+            Icon(icon, color: iconTextColor, size: 30),
             const SizedBox(height: 8),
             Text(
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w500,
-                color: iconColor ?? Colors.blue[800],
+                color: iconTextColor,
               ),
               textAlign: TextAlign.center,
             ),
@@ -693,9 +655,6 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-
-
-
   Widget _buildActivityItem(
     String title,
     String subtitle,
@@ -703,24 +662,56 @@ class _ProfileScreenState extends State<ProfileScreen>
     IconData icon,
     Color color,
   ) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    // Adjust color brightness for dark mode
+    Color adaptedColor = isDarkMode
+        ? color.withOpacity(0.8) // Slightly dimmed for dark mode
+        : color;
+        
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: colorScheme.surface,
+      shadowColor: isDarkMode ? Colors.black : Colors.grey[300],
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDarkMode
+              ? colorScheme.onSurface.withOpacity(0.1)
+              : Colors.transparent,
+          width: 1,
+        ),
+      ),
       child: ListTile(
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
+            color: adaptedColor.withOpacity(0.2),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, color: color),
+          child: Icon(icon, color: adaptedColor),
         ),
-        title: Text(title),
-        subtitle: Text(subtitle),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: TextStyle(
+            color: colorScheme.onSurface.withOpacity(0.7),
+          ),
+        ),
         trailing: Text(
           time,
-          style: TextStyle(color: Colors.grey[600], fontSize: 12),
+          style: TextStyle(
+            color: colorScheme.onSurface.withOpacity(0.5),
+            fontSize: 12,
+          ),
         ),
       ),
     );

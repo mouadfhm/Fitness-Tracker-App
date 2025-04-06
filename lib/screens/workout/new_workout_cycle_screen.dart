@@ -50,10 +50,6 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
   // Custom workouts fetched from API
   List<Map<String, dynamic>> _customWorkouts = [];
 
-  // Custom app colors
-  late Color _primaryColor;
-  late Color _accentColor;
-
   @override
   void initState() {
     super.initState();
@@ -68,7 +64,6 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
     try {
       final List<dynamic> workouts =
           await _apiService.fetchWorkout(); // Expecting a List
-      debugPrint('response : $workouts');
 
       setState(() {
         _customWorkouts =
@@ -95,20 +90,29 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
-    // Initialize custom colors to match workout calendar screen
-    _primaryColor = Colors.blueGrey;
-    _accentColor = Colors.blue;
+    final isDark = theme.brightness == Brightness.dark;
+    
+    // Dynamic colors based on theme brightness
+    final primaryColor = isDark ? Colors.blueGrey.shade300 : Colors.blueGrey;
+    final accentColor = isDark ? Colors.tealAccent.shade700 : Colors.blue;
+    
+    // Surface colors for containers
+    final surfaceColor = isDark 
+        ? theme.colorScheme.surface.withOpacity(0.8) 
+        : theme.colorScheme.surfaceVariant;
+    
+    // Border colors that work in both themes
+    final borderColor = isDark 
+        ? Colors.white24 
+        : theme.colorScheme.outlineVariant.withOpacity(0.5);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Create Workout Cycle'),
+        title: const Text(
+          'Create Workout Cycle',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         elevation: 0,
-        scrolledUnderElevation: 0,
-        centerTitle: true,
-        backgroundColor: _primaryColor.withOpacity(0.1),
-        foregroundColor: _primaryColor,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -123,7 +127,7 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: _primaryColor,
+                    color: accentColor,
                   ),
                 ),
               ),
@@ -135,33 +139,34 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
           ),
         ],
       ),
-      body:
-          _isLoading
-              ? _buildLoadingState()
-              : _errorMessage != null
-              ? _buildErrorState(theme)
-              : _buildForm(theme),
-      bottomNavigationBar: _buildBottomBar(theme),
+      body: _isLoading
+          ? _buildLoadingState(accentColor, primaryColor)
+          : _errorMessage != null
+              ? _buildErrorState(theme, accentColor)
+              : _buildForm(theme, primaryColor, accentColor, surfaceColor, borderColor),
+      bottomNavigationBar: _buildBottomBar(theme, primaryColor, accentColor),
     );
   }
 
-  Widget _buildForm(ThemeData theme) {
+  Widget _buildForm(ThemeData theme, Color primaryColor, Color accentColor, 
+      Color surfaceColor, Color borderColor) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStartDateSection(theme),
+          _buildStartDateSection(theme, primaryColor, accentColor, surfaceColor, borderColor),
           const SizedBox(height: 24),
-          _buildWeeksSection(theme),
+          _buildWeeksSection(theme, primaryColor, accentColor),
           const SizedBox(height: 24),
-          _buildDaysPatternSection(theme),
+          _buildDaysPatternSection(theme, primaryColor, accentColor, surfaceColor, borderColor),
         ],
       ),
     );
   }
 
-  Widget _buildStartDateSection(ThemeData theme) {
+  Widget _buildStartDateSection(ThemeData theme, Color primaryColor, Color accentColor, 
+      Color surfaceColor, Color borderColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -169,21 +174,19 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
           'Start Date',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            color: _primaryColor,
+            color: primaryColor,
           ),
         ),
         const SizedBox(height: 8),
         InkWell(
-          onTap: _selectStartDate,
+          onTap: () => _selectStartDate(accentColor),
           borderRadius: BorderRadius.circular(12),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceVariant,
+              color: surfaceColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.colorScheme.outlineVariant.withOpacity(0.5),
-              ),
+              border: Border.all(color: borderColor),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -192,7 +195,7 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
                   DateFormat('EEEE, MMMM d, yyyy').format(_startDate),
                   style: theme.textTheme.bodyLarge,
                 ),
-                Icon(Icons.calendar_today, size: 20, color: _primaryColor),
+                Icon(Icons.calendar_today, size: 20, color: accentColor),
               ],
             ),
           ),
@@ -200,15 +203,13 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
         const SizedBox(height: 8),
         Text(
           'Your workout cycle will begin on this date',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          style: theme.textTheme.bodySmall,
         ),
       ],
     );
   }
 
-  Widget _buildWeeksSection(ThemeData theme) {
+  Widget _buildWeeksSection(ThemeData theme, Color primaryColor, Color accentColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -216,7 +217,7 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
           'Number of Weeks',
           style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            color: _primaryColor,
+            color: primaryColor,
           ),
         ),
         const SizedBox(height: 8),
@@ -228,8 +229,8 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
                 min: 1,
                 max: 12,
                 divisions: 11,
-                activeColor: _accentColor,
-                inactiveColor: _accentColor.withOpacity(0.2),
+                activeColor: accentColor,
+                inactiveColor: accentColor.withOpacity(0.2),
                 onChanged: (value) {
                   setState(() {
                     _weeks = value.toInt();
@@ -241,11 +242,11 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: _accentColor,
+                color: accentColor,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: _accentColor.withOpacity(0.3),
+                    color: accentColor.withOpacity(0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -264,15 +265,16 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
         ),
         Text(
           'Your workout cycle will repeat for $_weeks weeks',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          style: theme.textTheme.bodySmall,
         ),
       ],
     );
   }
 
-  Widget _buildDaysPatternSection(ThemeData theme) {
+  Widget _buildDaysPatternSection(ThemeData theme, Color primaryColor, Color accentColor, 
+      Color surfaceColor, Color borderColor) {
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -286,15 +288,13 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
                     'Workout Schedule',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: _primaryColor,
+                      color: primaryColor,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Choose workouts for each day of the week',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                    style: theme.textTheme.bodySmall,
                   ),
                 ],
               ),
@@ -302,8 +302,8 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
             if (_customWorkouts.isEmpty && !_isLoadingWorkouts)
               TextButton.icon(
                 onPressed: _fetchCustomWorkouts,
-                icon: Icon(Icons.refresh, size: 18, color: _accentColor),
-                label: Text('Refresh', style: TextStyle(color: _accentColor)),
+                icon: Icon(Icons.refresh, size: 18, color: accentColor),
+                label: Text('Refresh', style: TextStyle(color: accentColor)),
               ),
           ],
         ),
@@ -316,11 +316,11 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
               padding: const EdgeInsets.all(32.0),
               child: Column(
                 children: [
-                  CircularProgressIndicator(color: _accentColor),
+                  CircularProgressIndicator(color: accentColor),
                   const SizedBox(height: 16),
                   Text(
                     'Loading your custom workouts...',
-                    style: TextStyle(color: _primaryColor),
+                    style: TextStyle(color: primaryColor),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -336,43 +336,40 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
                   Icon(
                     Icons.fitness_center_outlined,
                     size: 64,
-                    color: _primaryColor.withOpacity(0.3),
+                    color: primaryColor.withOpacity(0.3),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'No custom workouts found',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: _primaryColor,
+                      color: primaryColor,
                     ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Create custom workouts first before setting up a workout cycle',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                    style: theme.textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
                     onPressed: () {
-                      // Navigate to create custom workout screen
-                      // You'd need to implement this navigation
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text(
-                            'Navigate to create custom workout',
-                          ),
-                          backgroundColor: _accentColor,
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => NewWorkoutScreen(),
                         ),
-                      );
+                      ).then((_) {
+                        // Refresh workouts when returning from NewWorkoutScreen
+                        _fetchCustomWorkouts();
+                      });
                     },
-                    icon: const Icon(Icons.add),
+                    icon: const Icon(Icons.add, color: Colors.white),
                     label: const Text('Create Workout'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _accentColor,
+                      backgroundColor: accentColor,
                       foregroundColor: Colors.white,
                     ),
                   ),
@@ -391,13 +388,17 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
               final dayName = _dayNames[index];
               final selectedWorkoutId = _daysPattern[dayKey];
 
+              // Card background that works in both themes
+              final cardColor = isDark 
+                  ? theme.cardColor.withOpacity(0.7) 
+                  : theme.cardColor;
+
               return Card(
-                elevation: 0,
+                elevation: isDark ? 2 : 0,
+                color: cardColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: theme.colorScheme.outlineVariant.withOpacity(0.5),
-                  ),
+                  side: BorderSide(color: borderColor),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -407,10 +408,10 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: _primaryColor.withOpacity(0.1),
+                          color: primaryColor.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: _primaryColor.withOpacity(0.3),
+                            color: primaryColor.withOpacity(0.5),
                           ),
                         ),
                         alignment: Alignment.center,
@@ -418,7 +419,7 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
                           dayName.substring(0, 1),
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: _primaryColor,
+                            color: primaryColor,
                           ),
                         ),
                       ),
@@ -438,6 +439,10 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
                               theme,
                               dayKey,
                               selectedWorkoutId,
+                              accentColor,
+                              primaryColor,
+                              surfaceColor,
+                              borderColor,
                             ),
                           ],
                         ),
@@ -452,135 +457,150 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
     );
   }
 
-Widget _buildWorkoutDropdown(
-  ThemeData theme,
-  String dayKey,
-  int? selectedWorkoutId,
-) {
-  // Find the selected workout name for display
-  if (selectedWorkoutId != null) {
-    _customWorkouts.firstWhere(
-      (workout) => workout['id'] == selectedWorkoutId,
-      orElse: () => {'name': 'Unknown Workout'},
-    );
-  }
+  Widget _buildWorkoutDropdown(
+    ThemeData theme,
+    String dayKey,
+    int? selectedWorkoutId,
+    Color accentColor,
+    Color primaryColor,
+    Color surfaceColor,
+    Color borderColor,
+  ) {
+    // Enhanced contrast for dropdown for better visibility in dark mode
+    final dropdownTextColor = theme.brightness == Brightness.dark 
+        ? Colors.white 
+        : theme.textTheme.bodyMedium?.color;
+    
+    final addButtonBgColor = theme.brightness == Brightness.dark
+        ? accentColor.withOpacity(0.2)
+        : accentColor.withOpacity(0.1);
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceVariant,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: theme.colorScheme.outlineVariant.withOpacity(0.5),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: surfaceColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: borderColor),
           ),
-        ),
-        child: DropdownButton<int?>(
-          value: selectedWorkoutId,
-          hint: Text(
-            'Rest day',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+          child: DropdownButton<int?>(
+            value: selectedWorkoutId,
+            hint: Text(
+              'Rest day',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: dropdownTextColor?.withOpacity(0.7),
+              ),
             ),
-          ),
-          underline: const SizedBox(),
-          isExpanded: true,
-          icon: Icon(Icons.arrow_drop_down, color: _primaryColor),
-          items: [
-            DropdownMenuItem<int?>(
-              value: null,
-              child: Text('Rest day', style: theme.textTheme.bodyMedium),
-            ),
-            ..._customWorkouts.map((workout) {
-              return DropdownMenuItem<int?>(
-                value: workout['id'],
-                child: Text(
-                  workout['name'],
-                  style: theme.textTheme.bodyMedium,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              );
-            }).toList(),
-          ],
-          selectedItemBuilder: (BuildContext context) {
-            return [
-              DropdownMenuItem<String>(
-                value: 'Rest day',
-                child: Text('Rest day', style: theme.textTheme.bodyMedium),
+            underline: const SizedBox(),
+            isExpanded: true,
+            dropdownColor: theme.cardColor,
+            icon: Icon(Icons.arrow_drop_down, color: accentColor),
+            items: [
+              DropdownMenuItem<int?>(
+                value: null,
+                child: Text('Rest day', style: TextStyle(color: dropdownTextColor)),
               ),
               ..._customWorkouts.map((workout) {
-                return DropdownMenuItem<String>(
-                  value: workout['name'],
+                return DropdownMenuItem<int?>(
+                  value: workout['id'],
                   child: Text(
                     workout['name'],
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: TextStyle(color: dropdownTextColor),
                     overflow: TextOverflow.ellipsis,
                   ),
                 );
               }).toList(),
-            ];
-          },
-          onChanged: (newValue) {
-            setState(() {
-              _daysPattern[dayKey] = newValue;
+            ],
+            selectedItemBuilder: (BuildContext context) {
+              return [
+                DropdownMenuItem<String>(
+                  value: 'Rest day',
+                  child: Text('Rest day', 
+                    style: TextStyle(
+                      color: dropdownTextColor,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                ..._customWorkouts.map((workout) {
+                  return DropdownMenuItem<String>(
+                    value: workout['name'],
+                    child: Text(
+                      workout['name'],
+                      style: TextStyle(
+                        color: dropdownTextColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                }).toList(),
+              ];
+            },
+            onChanged: (newValue) {
+              setState(() {
+                _daysPattern[dayKey] = newValue;
+              });
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => NewWorkoutScreen()),
+            ).then((_) {
+              // Refresh workouts when returning from NewWorkoutScreen
+              _fetchCustomWorkouts();
             });
           },
-        ),
-      ),
-      const SizedBox(height: 8),
-      InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => NewWorkoutScreen()),
-          ).then((_) {
-            // Refresh workouts when returning from NewWorkoutScreen
-            _fetchCustomWorkouts();
-          });
-        },
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: _accentColor.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: _accentColor.withOpacity(0.3),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: addButtonBgColor,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: accentColor.withOpacity(0.5)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.add_circle_outline, color: accentColor, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  'Add New Workout',
+                  style: TextStyle(
+                    color: accentColor,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.add_circle_outline, color: _accentColor, size: 16),
-              const SizedBox(width: 4),
-              Text(
-                'Add New Workout',
-                style: TextStyle(
-                  color: _accentColor,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
         ),
-      ),
-    ],
-  );
-}
-  Widget _buildBottomBar(ThemeData theme) {
+      ],
+    );
+  }
+
+  Widget _buildBottomBar(ThemeData theme, Color primaryColor, Color accentColor) {
     final bool hasWorkouts = _customWorkouts.isNotEmpty;
+    final isDark = theme.brightness == Brightness.dark;
+    
+    // Add subtle elevation to bottom bar in dark mode
+    final bottomBarColor = isDark
+        ? theme.scaffoldBackgroundColor.withOpacity(0.9)
+        : theme.scaffoldBackgroundColor;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
+        color: bottomBarColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
             blurRadius: 5,
             offset: const Offset(0, -1),
           ),
@@ -596,25 +616,24 @@ Widget _buildWorkoutDropdown(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                side: BorderSide(color: _primaryColor),
+                side: BorderSide(color: primaryColor),
               ),
-              child: Text('Cancel', style: TextStyle(color: _primaryColor)),
+              child: Text('Cancel', style: TextStyle(color: primaryColor)),
             ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: FilledButton(
-              onPressed:
-                  hasWorkouts && !_isLoadingWorkouts
-                      ? _createWorkoutCycle
-                      : null,
+              onPressed: hasWorkouts && !_isLoadingWorkouts
+                  ? _createWorkoutCycle
+                  : null,
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                backgroundColor: _accentColor,
-                disabledBackgroundColor: _accentColor.withOpacity(0.3),
+                backgroundColor: accentColor,
+                disabledBackgroundColor: accentColor.withOpacity(0.3),
               ),
               child: const Text('Create Cycle'),
             ),
@@ -624,35 +643,39 @@ Widget _buildWorkoutDropdown(
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(Color accentColor, Color primaryColor) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(color: _accentColor),
+          CircularProgressIndicator(color: accentColor),
           const SizedBox(height: 16),
           Text(
             'Creating your workout cycle...',
-            style: TextStyle(color: _primaryColor),
+            style: TextStyle(color: primaryColor),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildErrorState(ThemeData theme) {
+  Widget _buildErrorState(ThemeData theme, Color accentColor) {
+    final errorColor = theme.brightness == Brightness.dark
+        ? Colors.red.shade300
+        : Colors.red.shade400;
+        
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
+          Icon(Icons.error_outline, size: 64, color: errorColor),
           const SizedBox(height: 16),
           Text(
             'Error Creating Workout Cycle',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.red.shade300,
+              color: errorColor,
             ),
           ),
           const SizedBox(height: 8),
@@ -660,7 +683,11 @@ Widget _buildWorkoutDropdown(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(
               _errorMessage ?? 'An unknown error occurred',
-              style: const TextStyle(color: Colors.grey),
+              style: TextStyle(
+                color: theme.brightness == Brightness.dark 
+                    ? Colors.grey.shade300
+                    : Colors.grey.shade700,
+              ),
               textAlign: TextAlign.center,
             ),
           ),
@@ -674,7 +701,7 @@ Widget _buildWorkoutDropdown(
             icon: const Icon(Icons.refresh),
             label: const Text('Try Again'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: _accentColor,
+              backgroundColor: accentColor,
               foregroundColor: Colors.white,
             ),
           ),
@@ -683,20 +710,31 @@ Widget _buildWorkoutDropdown(
     );
   }
 
-  void _selectStartDate() async {
+  void _selectStartDate(Color accentColor) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _startDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
       builder: (context, child) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: _accentColor,
-              onPrimary: Colors.white,
-              onSurface: _primaryColor,
-            ),
+            colorScheme: isDark 
+                ? ColorScheme.dark(
+                    primary: accentColor,
+                    onPrimary: Colors.white,
+                    surface: theme.cardColor,
+                    onSurface: Colors.white,
+                  )
+                : ColorScheme.light(
+                    primary: accentColor,
+                    onPrimary: Colors.white,
+                    onSurface: Colors.blueGrey,
+                  ),
+            dialogBackgroundColor: theme.scaffoldBackgroundColor,
           ),
           child: child!,
         );

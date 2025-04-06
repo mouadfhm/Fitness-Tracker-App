@@ -1,5 +1,6 @@
 // ignore_for_file: library_private_types_in_public_api
 
+import 'package:fitness_tracker_app/screens/workout/edit_workout_screen.dart';
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 
@@ -15,6 +16,7 @@ class WorkoutDetailScreen extends StatefulWidget {
 class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
   late Future<Map<String, dynamic>> _workoutFuture;
   final ApiService _apiService = ApiService();
+  bool _isLoadingWorkouts = true;
 
   @override
   void initState() {
@@ -25,21 +27,42 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
   void _fetchWorkoutDetails() {
     setState(() {
       _workoutFuture = _apiService.fetchCustomWorkout(widget.workoutId);
+      _isLoadingWorkouts = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Workout Details'),
+
+            appBar: AppBar(
+        title: const Text(
+          'Workout Details',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        elevation: 0,
         actions: [
+          if (_isLoadingWorkouts)
+            Padding(
+              padding: const EdgeInsets.only(right: 16.0),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    // color: _primaryColor,
+                  ),
+                ),
+              ),
+            ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _fetchWorkoutDetails,
           ),
         ],
       ),
+
       body: FutureBuilder<Map<String, dynamic>>(
         future: _workoutFuture,
         builder: (context, snapshot) {
@@ -77,7 +100,6 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
 
           final workout = snapshot.data!;
           final exercises = workout['gym_exercises'] as List<dynamic>;
-
           return CustomScrollView(
             slivers: [
               // Workout header section
@@ -85,98 +107,123 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(20),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        workout['name'],
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        workout['description'] ?? 'No description available',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Chip(
-                            label: Text('${exercises.length} Exercises'),
-                            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                          Expanded(
+                            child: Text(
+                              workout['name'],
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                          const SizedBox(width: 8),
-                          Chip(
-                            label: Text(_calculateTotalTime(exercises)),
-                            backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () async {
+                              await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EditWorkoutScreen(
+                                workoutId: widget.workoutId,
+                                ),
+                              ),
+                              );
+                              _fetchWorkoutDetails(); // Refresh after returning from edit screen
+                            },
                           ),
                         ],
                       ),
-                      const Divider(height: 32),
-                      const Text(
-                        'Exercises',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      const SizedBox(height: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 8),
+                          Text(
+                            workout['description'] ??
+                                'No description available',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Chip(
+                                label: Text('${exercises.length} Exercises'),
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).primaryColor.withOpacity(0.1),
+                              ),
+                              const SizedBox(width: 8),
+                              Chip(
+                                label: Text(_calculateTotalTime(exercises)),
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).primaryColor.withOpacity(0.1),
+                              ),
+                            ],
+                          ),
+                          const Divider(height: 32),
+                          const Text(
+                            'Exercises',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
               ),
-              
               // List of exercises
               SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final exercise = exercises[index];
-                    final pivot = exercise['pivot'];
-                    
-                    return ExerciseCard(
-                      exercise: exercise,
-                      sets: pivot['sets'],
-                      reps: pivot['reps'],
-                      duration: pivot['duration'],
-                      rest: pivot['rest'],
-                    );
-                  },
-                  childCount: exercises.length,
-                ),
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final exercise = exercises[index];
+                  final pivot = exercise['pivot'];
+
+                  return ExerciseCard(
+                    exercise: exercise,
+                    sets: pivot['sets'],
+                    reps: pivot['reps'],
+                    duration: pivot['duration'],
+                    rest: pivot['rest'],
+                  );
+                }, childCount: exercises.length),
               ),
-              
+
               // Bottom padding
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 80),
-              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 80)),
             ],
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // Navigate to start workout screen
-          // Example: Navigator.push(context, MaterialPageRoute(builder: (context) => 
-          //   StartWorkoutScreen(workoutId: widget.workoutId)));
-        },
-        icon: const Icon(Icons.fitness_center),
-        label: const Text('Start Workout'),
-      ),
+      // floatingActionButton: FloatingActionButton.extended(
+      //   onPressed: () {
+      //     // Navigate to start workout screen
+      //     // Example: Navigator.push(context, MaterialPageRoute(builder: (context) =>
+      //     //   StartWorkoutScreen(workoutId: widget.workoutId)));
+      //   },
+      //   icon: const Icon(Icons.fitness_center),
+      //   label: const Text('Start Workout'),
+      // ),
     );
   }
 
   String _calculateTotalTime(List<dynamic> exercises) {
     // Calculate estimated workout time based on sets, reps, and rest periods
     int totalTimeInSeconds = 0;
-    
+
     for (var exercise in exercises) {
       final pivot = exercise['pivot'];
       final sets = pivot['sets'] as int;
       final rest = pivot['rest'] as int;
-      
+
       // Estimate 3 seconds per rep
       int repsTime = 0;
       if (pivot['reps'] != null) {
@@ -184,13 +231,16 @@ class _WorkoutDetailScreenState extends State<WorkoutDetailScreen> {
       } else if (pivot['duration'] != null) {
         repsTime = (pivot['duration'] as int) * sets;
       }
-      
+
       // Add rest time between sets (except after the last set)
       int restTime = rest * (sets - 1);
-      
+
       totalTimeInSeconds += repsTime + restTime;
     }
-    
+
+    // Add rest time between exercises (e.g., 5 minutes)
+    totalTimeInSeconds += (exercises.length - 1) * 5 * 60;
+
     // Convert to minutes
     int minutes = totalTimeInSeconds ~/ 60;
     return '$minutes min';
@@ -220,10 +270,7 @@ class ExerciseCard extends StatelessWidget {
       child: ExpansionTile(
         title: Text(
           exercise['name'],
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,10 +278,7 @@ class ExerciseCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               '${exercise['body_part']} • ${exercise['type']}',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
             ),
             const SizedBox(height: 4),
             Row(
@@ -259,10 +303,7 @@ class ExerciseCard extends StatelessWidget {
               children: [
                 const Text(
                   'Description:',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -284,17 +325,17 @@ class ExerciseCard extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Center(
-                  child: OutlinedButton.icon(
-                    icon: const Icon(Icons.videocam),
-                    label: const Text('Watch Technique'),
-                    onPressed: () {
-                      // Navigate to video tutorial if available
-                      // Example: Navigator.push(context, MaterialPageRoute(builder: (context) => 
-                      //   ExerciseTutorialScreen(exerciseId: exercise['id'])));
-                    },
-                  ),
-                ),
+                // Center(
+                //   child: OutlinedButton.icon(
+                //     icon: const Icon(Icons.videocam),
+                //     label: const Text('Watch Technique'),
+                //     onPressed: () {
+                //       // Navigate to video tutorial if available
+                //       // Example: Navigator.push(context, MaterialPageRoute(builder: (context) =>
+                //       //   ExerciseTutorialScreen(exerciseId: exercise['id'])));
+                //     },
+                //   ),
+                // ),
               ],
             ),
           ),
@@ -317,10 +358,7 @@ class ExerciseCard extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey.shade800,
-            ),
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
           ),
         ],
       ),

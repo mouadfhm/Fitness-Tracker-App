@@ -1,3 +1,4 @@
+import 'package:fitness_tracker_app/providers/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -14,8 +15,8 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // await Firebase.initializeApp();
   // Load the environment file - change the filename based on your build environment
-  // await dotenv.load(fileName: ".env.production");
-  await dotenv.load(fileName: ".env.development");
+  await dotenv.load(fileName: ".env.production");
+  // await dotenv.load(fileName: ".env.development");
 
   // Get the stored token (if any)
   final token = await TokenService.getToken();
@@ -44,11 +45,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Fitness Tracker',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(primarySwatch: Colors.purple),
-      home: isLoggedIn ? const HomeScreen() : const LoginScreen(),
+    return ValueListenableBuilder(
+      valueListenable: themeModeNotifier,
+      builder: (context, ThemeMode mode, _) {
+        return MaterialApp(
+          title: 'Fitness Tracker',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(brightness: Brightness.light, useMaterial3: true),
+          darkTheme: ThemeData(brightness: Brightness.dark, useMaterial3: true),
+          themeMode: mode,
+          home: isLoggedIn ? const HomeScreen() : const LoginScreen(),
+        );
+      },
     );
   }
-}
+  }

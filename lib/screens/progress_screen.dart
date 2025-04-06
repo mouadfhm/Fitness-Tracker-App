@@ -76,7 +76,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.blue,
+        backgroundColor: Theme.of(context).colorScheme.secondary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
@@ -98,11 +98,15 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
   Widget _buildLineChart() {
     final spots = _generateSpots();
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDarkMode ? Colors.white70 : Colors.black87;
+    final gridColor = isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300;
+    
     if (spots.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           "No progress data available",
-          style: TextStyle(color: Colors.grey),
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
         ),
       );
     }
@@ -111,12 +115,13 @@ class _ProgressScreenState extends State<ProgressScreen> {
       LineChartData(
         lineTouchData: LineTouchData(
           touchTooltipData: LineTouchTooltipData(
+            // tooltipBorder: Theme.of(context).colorScheme.surface,
             getTooltipItems: (touchedSpots) {
               return touchedSpots.map((spot) {
                 final entry = _progressEntries[spot.spotIndex];
                 return LineTooltipItem(
                   "Date: ${entry['date']}\nWeight: ${entry['weight']} kg",
-                  const TextStyle(color: Colors.black87),
+                  TextStyle(color: Theme.of(context).colorScheme.onSurface),
                 );
               }).toList();
             },
@@ -127,7 +132,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
           drawVerticalLine: false,
           horizontalInterval: 1,
           getDrawingHorizontalLine:
-              (_) => FlLine(color: Colors.grey.shade300, strokeWidth: 1),
+              (_) => FlLine(color: gridColor, strokeWidth: 1),
         ),
         titlesData: FlTitlesData(
           bottomTitles: AxisTitles(
@@ -145,7 +150,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Text(
                       formattedDate,
-                      style: const TextStyle(fontSize: 10, color: Colors.grey),
+                      style: TextStyle(fontSize: 10, color: textColor),
                     ),
                   );
                 }
@@ -161,7 +166,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
               getTitlesWidget:
                   (value, meta) => Text(
                     value.toStringAsFixed(0),
-                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                    style: TextStyle(fontSize: 10, color: textColor),
                   ),
             ),
           ),
@@ -174,19 +179,35 @@ class _ProgressScreenState extends State<ProgressScreen> {
             spots: spots,
             isCurved: true,
             gradient: LinearGradient(
-              colors: [Colors.blue.shade400, Colors.blue.shade700],
+              colors: [Colors.cyan.shade400, Colors.blue.shade700],
             ),
             barWidth: 4,
             dotData: FlDotData(
               show: true,
-              getDotPainter:
-                  (spot, percent, barData, index) =>
-                      FlDotCirclePainter(color: Colors.white, radius: 5),
+              getDotPainter: (spot, percent, barData, index) => 
+                  FlDotCirclePainter(
+                    color: Theme.of(context).colorScheme.primary,
+                    strokeColor: Theme.of(context).colorScheme.surface,
+                    strokeWidth: 2,
+                    radius: 5
+                  ),
+            ),
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                colors: [
+                  Colors.cyan.shade400.withOpacity(0.3),
+                  Colors.blue.shade700.withOpacity(0.1)
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
             ),
           ),
         ],
         minX: 0,
         maxX: spots.length.toDouble() - 1,
+        backgroundColor: Theme.of(context).colorScheme.surface,
       ),
     );
   }
@@ -200,6 +221,8 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -207,16 +230,19 @@ class _ProgressScreenState extends State<ProgressScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         elevation: 0,
-        foregroundColor: Colors.black87,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
       ),
       body:
           _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? Center(child: CircularProgressIndicator(
+                  color: Theme.of(context).colorScheme.primary,
+                ))
               : _errorMessage != null
               ? Center(
                 child: Text(
                   _errorMessage!,
-                  style: const TextStyle(color: Colors.red),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               )
               : SingleChildScrollView(
@@ -241,18 +267,19 @@ class _ProgressScreenState extends State<ProgressScreen> {
   Widget _buildProgressEntryForm() {
     return Card(
       elevation: 4,
+      color: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
+            Text(
               "Add Progress Entry",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 16),
@@ -265,6 +292,14 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   initialDate: DateTime.now(),
                   firstDate: DateTime(2000),
                   lastDate: DateTime(2101),
+                  builder: (context, child) {
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: Theme.of(context).colorScheme,
+                      ),
+                      child: child!,
+                    );
+                  },
                 );
                 if (pickedDate != null) {
                   String formattedDate = DateFormat(
@@ -277,35 +312,63 @@ class _ProgressScreenState extends State<ProgressScreen> {
               },
               decoration: InputDecoration(
                 labelText: "Date",
+                labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                prefixIcon: const Icon(Icons.calendar_today),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+                ),
+                prefixIcon: Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.primary),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
               ),
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: _weightController,
               decoration: InputDecoration(
                 labelText: "Weight (kg)",
+                labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                prefixIcon: const Icon(Icons.monitor_weight),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+                ),
+                prefixIcon: Icon(Icons.monitor_weight, color: Theme.of(context).colorScheme.primary),
+                filled: true,
+                fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
               ),
               keyboardType: TextInputType.number,
+              style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                backgroundColor: Theme.of(context).colorScheme.primary, 
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                elevation: 2,
               ),
               onPressed: _addProgress,
               child: const Text(
                 "Add Your Progress",
-                style: TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -317,18 +380,19 @@ class _ProgressScreenState extends State<ProgressScreen> {
   Widget _buildProgressChart() {
     return Card(
       elevation: 4,
+      color: Theme.of(context).colorScheme.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
+            Text(
               "Progress Chart",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 16),
