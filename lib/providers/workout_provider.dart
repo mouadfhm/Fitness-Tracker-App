@@ -7,7 +7,7 @@ class WorkoutProvider with ChangeNotifier {
   final WorkoutService _workoutService;
   
   List<Exercise> _exercises = [];
-  List<Workout> _workouts = [];
+  final List<Workout> _workouts = [];
   WeeklyWorkoutPlan? _weeklyPlan;
   bool _isLoading = false;
   String? _errorMessage;

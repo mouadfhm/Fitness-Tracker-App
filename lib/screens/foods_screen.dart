@@ -640,7 +640,7 @@ class _FoodsScreenState extends State<FoodsScreen>
                   borderSide: BorderSide(color: colorScheme.primary, width: 2),
                 ),
                 filled: true,
-                fillColor: colorScheme.surfaceVariant.withOpacity(0.3),
+                fillColor: colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 contentPadding: const EdgeInsets.symmetric(vertical: 12),
               ),
               style: TextStyle(color: colorScheme.onSurface),
@@ -648,7 +648,7 @@ class _FoodsScreenState extends State<FoodsScreen>
               onChanged: (query) => setState(() {}), // triggers rebuild to filter list
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           ElevatedButton(
             onPressed: _scanBarcode,
             style: ElevatedButton.styleFrom(
@@ -657,7 +657,7 @@ class _FoodsScreenState extends State<FoodsScreen>
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              padding: const EdgeInsets.symmetric(vertical: 16),
+              padding: const EdgeInsets.symmetric(vertical: 12),
               elevation: 2,
             ),
             child: const Icon(Icons.qr_code, size: 28),

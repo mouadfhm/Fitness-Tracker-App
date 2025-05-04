@@ -5,7 +5,7 @@ import '../../providers/workout_provider.dart';
 import '../../models/workout.dart';
 
 class ExerciseSelectionScreen extends StatefulWidget {
-  const ExerciseSelectionScreen({Key? key}) : super(key: key);
+  const ExerciseSelectionScreen({super.key});
 
   @override
   _ExerciseSelectionScreenState createState() => _ExerciseSelectionScreenState();

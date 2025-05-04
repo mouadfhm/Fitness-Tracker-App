@@ -255,13 +255,13 @@ class ExerciseCard extends StatelessWidget {
   final int rest;
 
   const ExerciseCard({
-    Key? key,
+    super.key,
     required this.exercise,
     required this.sets,
     required this.reps,
     required this.duration,
     required this.rest,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

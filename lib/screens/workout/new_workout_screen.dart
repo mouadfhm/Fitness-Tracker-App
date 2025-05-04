@@ -17,7 +17,7 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
   final _descriptionController = TextEditingController();
 
   // Selected exercises
-  List<Map<String, dynamic>> _selectedExercises = [];
+  final List<Map<String, dynamic>> _selectedExercises = [];
 
   // List of available exercises
   List<Map<String, dynamic>> _gymExercises = [];
@@ -57,7 +57,7 @@ class _NewWorkoutScreenState extends State<NewWorkoutScreen> {
     _primaryColor = isDark ? Colors.blueGrey.shade600 : Colors.blueGrey;
     _accentColor = isDark ? Colors.tealAccent.shade700 : Colors.blue;
     _cardColor = isDark ? Colors.grey.shade900 : theme.cardColor;
-    _surfaceColor = isDark ? Colors.grey.shade800 : theme.colorScheme.surfaceVariant;
+    _surfaceColor = isDark ? Colors.grey.shade800 : theme.colorScheme.surfaceContainerHighest;
     _textPrimaryColor = isDark ? Colors.white : theme.colorScheme.onSurface;
     _textSecondaryColor = isDark ? Colors.grey.shade300 : theme.colorScheme.onSurfaceVariant;
     _borderColor = isDark ? Colors.grey.shade700 : theme.colorScheme.outlineVariant.withOpacity(0.5);

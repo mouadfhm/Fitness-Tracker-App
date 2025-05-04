@@ -84,19 +84,25 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
   }
 
   void _fetchWeeklyPlan() {
-    setState(() {
-      _weeklyPlanFuture = _apiService.fetchWeeklyWorkouts();
-    });
+    if (mounted) {
+      setState(() {
+        _weeklyPlanFuture = _apiService.fetchWeeklyWorkouts();
+      });
+    }
   }
 
   //delete schedule workout
   void _deleteScheduleWorkout(int scheduleWorkoutId) async {
     await _apiService.deleteScheduleWorkout(scheduleWorkoutId);
-    _fetchWeeklyPlan();
+    if (mounted) {
+      _fetchWeeklyPlan();
+    }
   }
 
   // Method to fetch workouts
   Future<void> _fetchWorkouts() async {
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -104,17 +110,23 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
 
     try {
       final List<dynamic> workouts = await _apiService.fetchWorkout();
-      setState(() {
-        _workouts =
-            workouts.map((workout) => workout as Map<String, dynamic>).toList();
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _workouts =
+              workouts
+                  .map((workout) => workout as Map<String, dynamic>)
+                  .toList();
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'Failed to load workouts: ${e.toString()}';
-        debugPrint('Failed to load workouts: ${e.toString()}');
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load workouts: ${e.toString()}';
+          debugPrint('Failed to load workouts: ${e.toString()}');
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -129,9 +141,10 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
     _accentColor = isDarkMode ? Colors.tealAccent.shade400 : Colors.blue;
     _textColor = isDarkMode ? Colors.white : Colors.black87;
     _surfaceColor = isDarkMode ? const Color(0xFF303030) : Colors.white;
-    _cardBorderColor = isDarkMode 
-        ? Colors.tealAccent.withOpacity(0.3) 
-        : theme.colorScheme.outlineVariant.withOpacity(0.5);
+    _cardBorderColor =
+        isDarkMode
+            ? Colors.tealAccent.withOpacity(0.3)
+            : theme.colorScheme.outlineVariant.withOpacity(0.5);
     _iconColor = isDarkMode ? Colors.tealAccent.shade200 : Colors.blueGrey;
 
     return Scaffold(
@@ -148,7 +161,10 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh, color: isDarkMode ? _secondaryColor : null),
+            icon: Icon(
+              Icons.refresh,
+              color: isDarkMode ? _secondaryColor : null,
+            ),
             onPressed: _fetchWeeklyPlan,
             tooltip: 'Refresh workout plan',
           ),
@@ -186,8 +202,8 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
               _buildWeekNavigation(theme),
               _buildDaysSelector(theme, currentWeekData),
               Divider(
-                height: 1, 
-                color: isDarkMode ? Colors.white24 : Colors.black12
+                height: 1,
+                color: isDarkMode ? Colors.white24 : Colors.black12,
               ),
               _buildWorkoutsList(theme, currentWeekData),
             ],
@@ -203,13 +219,11 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
 
   Widget _buildWeekNavigation(ThemeData theme) {
     final isDarkMode = theme.brightness == Brightness.dark;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: isDarkMode 
-            ? Colors.black26 
-            : _primaryColor.withOpacity(0.05)
+        color: isDarkMode ? Colors.black26 : _primaryColor.withOpacity(0.05),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -218,9 +232,8 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
             icon: const Icon(Icons.arrow_back_ios_new, size: 18),
             style: IconButton.styleFrom(
               foregroundColor: _secondaryColor,
-              backgroundColor: isDarkMode 
-                  ? Colors.black38 
-                  : _primaryColor.withOpacity(0.1),
+              backgroundColor:
+                  isDarkMode ? Colors.black38 : _primaryColor.withOpacity(0.1),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
                 side: BorderSide(
@@ -249,9 +262,10 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
               Text(
                 '2025',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: isDarkMode 
-                      ? Colors.white70 
-                      : _primaryColor.withOpacity(0.7),
+                  color:
+                      isDarkMode
+                          ? Colors.white70
+                          : _primaryColor.withOpacity(0.7),
                 ),
               ),
             ],
@@ -260,9 +274,8 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
             icon: const Icon(Icons.arrow_forward_ios, size: 18),
             style: IconButton.styleFrom(
               foregroundColor: _secondaryColor,
-              backgroundColor: isDarkMode 
-                  ? Colors.black38 
-                  : _primaryColor.withOpacity(0.1),
+              backgroundColor:
+                  isDarkMode ? Colors.black38 : _primaryColor.withOpacity(0.1),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
                 side: BorderSide(
@@ -286,14 +299,15 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
 
   Widget _buildDaysSelector(ThemeData theme, Map<String, dynamic> weekData) {
     final isDarkMode = theme.brightness == Brightness.dark;
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isDarkMode 
-              ? [Colors.black45, Colors.transparent]
-              : [_primaryColor.withOpacity(0.05), Colors.transparent],
+          colors:
+              isDarkMode
+                  ? [Colors.black45, Colors.transparent]
+                  : [_primaryColor.withOpacity(0.05), Colors.transparent],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -312,27 +326,32 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
                 _currentWeekNumber == DateTime.now().weekOfYear;
 
             // Calculate colors based on states and theme
-            final backgroundColor = isSelected
-                ? _secondaryColor.withOpacity(0.8)
-                : (isToday
-                    ? (isDarkMode 
-                        ? Colors.teal.withOpacity(0.3) 
-                        : _primaryColor.withOpacity(0.15))
-                    : (isDarkMode 
-                        ? Colors.black38 
-                        : theme.colorScheme.surfaceVariant));
-                  
-            final textColor = isSelected
-                ? (isDarkMode ? Colors.black : Colors.white)
-                : (isToday
-                    ? _secondaryColor
-                    : (isDarkMode ? Colors.white70 : theme.colorScheme.onSurfaceVariant));
-            
-            final dotColor = hasWorkout
-                ? (isSelected 
-                    ? (isDarkMode ? Colors.black : Colors.white) 
-                    : _accentColor)
-                : Colors.transparent;
+            final backgroundColor =
+                isSelected
+                    ? _secondaryColor.withOpacity(0.8)
+                    : (isToday
+                        ? (isDarkMode
+                            ? Colors.teal.withOpacity(0.3)
+                            : _primaryColor.withOpacity(0.15))
+                        : (isDarkMode
+                            ? Colors.black38
+                            : theme.colorScheme.surfaceContainerHighest));
+
+            final textColor =
+                isSelected
+                    ? (isDarkMode ? Colors.black : Colors.white)
+                    : (isToday
+                        ? _secondaryColor
+                        : (isDarkMode
+                            ? Colors.white70
+                            : theme.colorScheme.onSurfaceVariant));
+
+            final dotColor =
+                hasWorkout
+                    ? (isSelected
+                        ? (isDarkMode ? Colors.black : Colors.white)
+                        : _accentColor)
+                    : Colors.transparent;
 
             return GestureDetector(
               onTap: () {
@@ -349,20 +368,23 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
                 decoration: BoxDecoration(
                   color: backgroundColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: isToday && !isSelected
-                      ? Border.all(color: _secondaryColor, width: 2)
-                      : null,
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: isDarkMode 
-                                ? _secondaryColor.withOpacity(0.3) 
-                                : _primaryColor.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
+                  border:
+                      isToday && !isSelected
+                          ? Border.all(color: _secondaryColor, width: 2)
+                          : null,
+                  boxShadow:
+                      isSelected
+                          ? [
+                            BoxShadow(
+                              color:
+                                  isDarkMode
+                                      ? _secondaryColor.withOpacity(0.3)
+                                      : _primaryColor.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                          : null,
                 ),
                 width: 48,
                 child: Column(
@@ -372,7 +394,8 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
                       _dayAbbreviations[index],
                       style: theme.textTheme.titleSmall?.copyWith(
                         color: textColor,
-                        fontWeight: isToday || isSelected ? FontWeight.bold : null,
+                        fontWeight:
+                            isToday || isSelected ? FontWeight.bold : null,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -409,13 +432,19 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
               Icon(
                 Icons.fitness_center_outlined,
                 size: 64,
-                color: isDarkMode ? _secondaryColor.withOpacity(0.3) : _primaryColor.withOpacity(0.3),
+                color:
+                    isDarkMode
+                        ? _secondaryColor.withOpacity(0.3)
+                        : _primaryColor.withOpacity(0.3),
               ),
               const SizedBox(height: 16),
               Text(
                 'No workouts for $selectedDayName',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: isDarkMode ? Colors.white70 : _primaryColor.withOpacity(0.7),
+                  color:
+                      isDarkMode
+                          ? Colors.white70
+                          : _primaryColor.withOpacity(0.7),
                 ),
               ),
               const SizedBox(height: 8),
@@ -424,7 +453,10 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
                   // Show workout selection dialog when Add Workout is pressed
                   _showWorkoutSelectionDialog(context, selectedDayKey);
                 },
-                icon: Icon(Icons.add, color: isDarkMode ? Colors.black : Colors.white),
+                icon: Icon(
+                  Icons.add,
+                  color: isDarkMode ? Colors.black : Colors.white,
+                ),
                 label: const Text('Add Workout'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _accentColor,
@@ -446,9 +478,10 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
             padding: const EdgeInsets.only(left: 20, top: 16, bottom: 8),
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: isDarkMode 
-                    ? [Colors.black38, Colors.transparent]
-                    : [_primaryColor.withOpacity(0.05), Colors.transparent],
+                colors:
+                    isDarkMode
+                        ? [Colors.black38, Colors.transparent]
+                        : [_primaryColor.withOpacity(0.05), Colors.transparent],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -495,13 +528,13 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
     if (_workouts.isEmpty && !_isLoading) {
       await _fetchWorkouts();
     }
-    
+
     // Initialize filtered workouts with all workouts
     _filteredWorkouts = List.from(_workouts);
-    
+
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
-    
+
     // ignore: use_build_context_synchronously
     showModalBottomSheet(
       context: context,
@@ -556,8 +589,8 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
                       });
                     },
                     icon: Icon(
-                      Icons.add, 
-                      color: isDarkMode ? Colors.black : Colors.white
+                      Icons.add,
+                      color: isDarkMode ? Colors.black : Colors.white,
                     ),
                     label: const Text('Create New Workout'),
                     style: ElevatedButton.styleFrom(
@@ -577,17 +610,23 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
                         color: isDarkMode ? Colors.grey : Colors.grey.shade600,
                       ),
                       prefixIcon: Icon(
-                        Icons.search, 
-                        color: isDarkMode ? Colors.grey : null
+                        Icons.search,
+                        color: isDarkMode ? Colors.grey : null,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(
-                          color: isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300,
+                          color:
+                              isDarkMode
+                                  ? Colors.grey.shade700
+                                  : Colors.grey.shade300,
                         ),
                       ),
                       filled: true,
-                      fillColor: isDarkMode ? Colors.grey.shade900 : Colors.grey.shade100,
+                      fillColor:
+                          isDarkMode
+                              ? Colors.grey.shade900
+                              : Colors.grey.shade100,
                     ),
                     style: TextStyle(
                       color: isDarkMode ? Colors.white : Colors.black,
@@ -600,16 +639,20 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
                           _filteredWorkouts = List.from(_workouts);
                         } else {
                           // Filter workouts by name or description containing the search text
-                          _filteredWorkouts = _workouts.where((workout) {
-                            final name = (workout['name'] as String).toLowerCase();
-                            final description = workout['description'] != null 
-                                ? (workout['description'] as String).toLowerCase() 
-                                : '';
-                            final searchLower = value.toLowerCase();
-                            
-                            return name.contains(searchLower) || 
-                                  description.contains(searchLower);
-                          }).toList();
+                          _filteredWorkouts =
+                              _workouts.where((workout) {
+                                final name =
+                                    (workout['name'] as String).toLowerCase();
+                                final description =
+                                    workout['description'] != null
+                                        ? (workout['description'] as String)
+                                            .toLowerCase()
+                                        : '';
+                                final searchLower = value.toLowerCase();
+
+                                return name.contains(searchLower) ||
+                                    description.contains(searchLower);
+                              }).toList();
                         }
                       });
                     },
@@ -636,7 +679,10 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
                               child: Text(
                                 _errorMessage!,
                                 style: TextStyle(
-                                  color: isDarkMode ? Colors.redAccent : Colors.red
+                                  color:
+                                      isDarkMode
+                                          ? Colors.redAccent
+                                          : Colors.red,
                                 ),
                               ),
                             )
@@ -648,17 +694,21 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
                                   Icon(
                                     Icons.search_off,
                                     size: 64,
-                                    color: isDarkMode 
-                                        ? Colors.grey.shade600 
-                                        : _primaryColor.withOpacity(0.3),
+                                    color:
+                                        isDarkMode
+                                            ? Colors.grey.shade600
+                                            : _primaryColor.withOpacity(0.3),
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
                                     'No matching workouts found',
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      color: isDarkMode 
-                                          ? Colors.grey 
-                                          : _primaryColor.withOpacity(0.7),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium?.copyWith(
+                                      color:
+                                          isDarkMode
+                                              ? Colors.grey
+                                              : _primaryColor.withOpacity(0.7),
                                     ),
                                   ),
                                 ],
@@ -672,24 +722,31 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
                                   Icon(
                                     Icons.fitness_center_outlined,
                                     size: 64,
-                                    color: isDarkMode 
-                                        ? Colors.grey.shade600 
-                                        : _primaryColor.withOpacity(0.3),
+                                    color:
+                                        isDarkMode
+                                            ? Colors.grey.shade600
+                                            : _primaryColor.withOpacity(0.3),
                                   ),
                                   const SizedBox(height: 16),
                                   Text(
                                     'No workouts available',
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      color: isDarkMode 
-                                          ? Colors.grey 
-                                          : _primaryColor.withOpacity(0.7),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium?.copyWith(
+                                      color:
+                                          isDarkMode
+                                              ? Colors.grey
+                                              : _primaryColor.withOpacity(0.7),
                                     ),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
                                     'Create your first workout',
                                     style: TextStyle(
-                                      color: isDarkMode ? Colors.grey.shade400 : null
+                                      color:
+                                          isDarkMode
+                                              ? Colors.grey.shade400
+                                              : null,
                                     ),
                                   ),
                                 ],
@@ -697,9 +754,13 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
                             )
                             : ListView.separated(
                               itemCount: _filteredWorkouts.length,
-                              separatorBuilder: (context, index) => Divider(
-                                color: isDarkMode ? Colors.grey.shade800 : Colors.grey.shade200,
-                              ),
+                              separatorBuilder:
+                                  (context, index) => Divider(
+                                    color:
+                                        isDarkMode
+                                            ? Colors.grey.shade800
+                                            : Colors.grey.shade200,
+                                  ),
                               itemBuilder: (context, index) {
                                 final workout = _filteredWorkouts[index];
                                 return ListTile(
@@ -724,7 +785,10 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
                                     workout['name'] as String,
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      color: isDarkMode ? Colors.white : _primaryColor,
+                                      color:
+                                          isDarkMode
+                                              ? Colors.white
+                                              : _primaryColor,
                                     ),
                                   ),
                                   subtitle:
@@ -734,7 +798,10 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
-                                              color: isDarkMode ? Colors.grey.shade400 : null,
+                                              color:
+                                                  isDarkMode
+                                                      ? Colors.grey.shade400
+                                                      : null,
                                             ),
                                           )
                                           : null,
@@ -800,15 +867,27 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
       await _apiService.storeScheduleWorkout(workout['id'], dateString);
 
       // Refresh the weekly plan to show the newly added workout
-      _fetchWeeklyPlan();
+      // Refresh the weekly plan to show the newly added workout
+      if (mounted) {
+        _fetchWeeklyPlan();
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to add workout: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add workout: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    // If you have any StreamSubscriptions, Timers, or other resources
+    // that need to be cleaned up, do it here
+    super.dispose();
   }
 
   Widget _buildWorkoutCard(ThemeData theme, dynamic workout) {
@@ -822,7 +901,10 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: isDarkMode ? _secondaryColor.withOpacity(0.3) : theme.colorScheme.outlineVariant.withOpacity(0.5),
+          color:
+              isDarkMode
+                  ? _secondaryColor.withOpacity(0.3)
+                  : theme.colorScheme.outlineVariant.withOpacity(0.5),
           width: isDarkMode ? 1.5 : 1,
         ),
       ),
@@ -851,13 +933,18 @@ class _WorkoutCalendarScreenState extends State<WorkoutCalendarScreen> {
                     decoration: BoxDecoration(
                       color: _getWorkoutColor(workoutData['name'] as String),
                       borderRadius: BorderRadius.circular(12),
-                      boxShadow: isDarkMode ? [
-                        BoxShadow(
-                          color: _getWorkoutColor(workoutData['name'] as String).withOpacity(0.5),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ] : null,
+                      boxShadow:
+                          isDarkMode
+                              ? [
+                                BoxShadow(
+                                  color: _getWorkoutColor(
+                                    workoutData['name'] as String,
+                                  ).withOpacity(0.5),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                              : null,
                     ),
                     child: Icon(
                       _getWorkoutIcon(workoutData['name'] as String),

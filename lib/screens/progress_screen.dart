@@ -101,12 +101,14 @@ class _ProgressScreenState extends State<ProgressScreen> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDarkMode ? Colors.white70 : Colors.black87;
     final gridColor = isDarkMode ? Colors.grey.shade700 : Colors.grey.shade300;
-    
+
     if (spots.isEmpty) {
       return Center(
         child: Text(
           "No progress data available",
-          style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+          ),
         ),
       );
     }
@@ -184,12 +186,12 @@ class _ProgressScreenState extends State<ProgressScreen> {
             barWidth: 4,
             dotData: FlDotData(
               show: true,
-              getDotPainter: (spot, percent, barData, index) => 
-                  FlDotCirclePainter(
+              getDotPainter:
+                  (spot, percent, barData, index) => FlDotCirclePainter(
                     color: Theme.of(context).colorScheme.primary,
                     strokeColor: Theme.of(context).colorScheme.surface,
                     strokeWidth: 2,
-                    radius: 5
+                    radius: 5,
                   ),
             ),
             belowBarData: BarAreaData(
@@ -197,7 +199,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
               gradient: LinearGradient(
                 colors: [
                   Colors.cyan.shade400.withOpacity(0.3),
-                  Colors.blue.shade700.withOpacity(0.1)
+                  Colors.blue.shade700.withOpacity(0.1),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -221,8 +223,6 @@ class _ProgressScreenState extends State<ProgressScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -235,9 +235,11 @@ class _ProgressScreenState extends State<ProgressScreen> {
       ),
       body:
           _isLoading
-              ? Center(child: CircularProgressIndicator(
+              ? Center(
+                child: CircularProgressIndicator(
                   color: Theme.of(context).colorScheme.primary,
-                ))
+                ),
+              )
               : _errorMessage != null
               ? Center(
                 child: Text(
@@ -294,9 +296,9 @@ class _ProgressScreenState extends State<ProgressScreen> {
                   lastDate: DateTime(2101),
                   builder: (context, child) {
                     return Theme(
-                      data: Theme.of(context).copyWith(
-                        colorScheme: Theme.of(context).colorScheme,
-                      ),
+                      data: Theme.of(
+                        context,
+                      ).copyWith(colorScheme: Theme.of(context).colorScheme),
                       child: child!,
                     );
                   },
@@ -312,21 +314,37 @@ class _ProgressScreenState extends State<ProgressScreen> {
               },
               decoration: InputDecoration(
                 labelText: "Date",
-                labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
+                labelStyle: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.8),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
+                  borderSide: BorderSide(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.3),
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2,
+                  ),
                 ),
-                prefixIcon: Icon(Icons.calendar_today, color: Theme.of(context).colorScheme.primary),
+                prefixIcon: Icon(
+                  Icons.calendar_today,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                fillColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
               ),
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
             ),
@@ -335,21 +353,37 @@ class _ProgressScreenState extends State<ProgressScreen> {
               controller: _weightController,
               decoration: InputDecoration(
                 labelText: "Weight (kg)",
-                labelStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8)),
+                labelStyle: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withOpacity(0.8),
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3)),
+                  borderSide: BorderSide(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.3),
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2,
+                  ),
                 ),
-                prefixIcon: Icon(Icons.monitor_weight, color: Theme.of(context).colorScheme.primary),
+                prefixIcon: Icon(
+                  Icons.monitor_weight,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
                 filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                fillColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
               ),
               keyboardType: TextInputType.number,
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
@@ -358,7 +392,7 @@ class _ProgressScreenState extends State<ProgressScreen> {
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                backgroundColor: Theme.of(context).colorScheme.primary, 
+                backgroundColor: Theme.of(context).colorScheme.primary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),

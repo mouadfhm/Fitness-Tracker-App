@@ -324,7 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             child: ExpansionTile(
-              initiallyExpanded: index == 0, // Expand today's meals by default
+              // initiallyExpanded: index == 0, // Expand today's meals by default
               tilePadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 8,
@@ -387,7 +387,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: TextStyle(fontWeight: FontWeight.w500),
                               ),
                               TextSpan(
-                                text: "${macros['calories']!.toStringAsFixed(1)}",
+                                text: macros['calories']!.toStringAsFixed(1),
                               ),
                             ],
                           ),
@@ -578,7 +578,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Icon(
                               Icons.stacked_bar_chart,
-                              color: colorScheme.primary,
+                              color: textColor,
                               size: 24,
                             ),
                             const SizedBox(width: 8),
@@ -676,7 +676,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           children: [
                             Icon(
                               Icons.restaurant_menu,
-                              color: colorScheme.primary,
+                              color: textColor,
                               size: 24,
                             ),
                             const SizedBox(width: 8),

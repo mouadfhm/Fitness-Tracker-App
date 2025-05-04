@@ -99,7 +99,7 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
     // Surface colors for containers
     final surfaceColor = isDark 
         ? theme.colorScheme.surface.withOpacity(0.8) 
-        : theme.colorScheme.surfaceVariant;
+        : theme.colorScheme.surfaceContainerHighest;
     
     // Border colors that work in both themes
     final borderColor = isDark 
@@ -511,7 +511,7 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 );
-              }).toList(),
+              }),
             ],
             selectedItemBuilder: (BuildContext context) {
               return [
@@ -536,7 +536,7 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   );
-                }).toList(),
+                }),
               ];
             },
             onChanged: (newValue) {
@@ -733,8 +733,7 @@ class _NewWorkoutCycleScreenState extends State<NewWorkoutCycleScreen> {
                     primary: accentColor,
                     onPrimary: Colors.white,
                     onSurface: Colors.blueGrey,
-                  ),
-            dialogBackgroundColor: theme.scaffoldBackgroundColor,
+                  ), dialogTheme: DialogThemeData(backgroundColor: theme.scaffoldBackgroundColor),
           ),
           child: child!,
         );

@@ -26,27 +26,18 @@ class ProfileScreen extends StatefulWidget {
   _ProfileScreenState createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen>
-    with SingleTickerProviderStateMixin {
+class _ProfileScreenState extends State<ProfileScreen> {
   final int _currentIndex = 3;
-  late TabController _tabController;
   final _apiService = ApiService();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     // Fetch profile data using the provider after the first frame.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ProfileProvider>(context, listen: false).fetchProfile();
       _loadSettings();
     });
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadSettings() async {
@@ -216,21 +207,8 @@ class _ProfileScreenState extends State<ProfileScreen>
           ),
         ],
         elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: colorScheme.primary,
-          unselectedLabelColor: colorScheme.onSurface.withOpacity(0.7),
-          indicatorColor: colorScheme.primary,
-          tabs: const [
-            Tab(text: "Profile"),
-            Tab(text: "Activity"),
-          ],
-        ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [_buildProfileTab(), _buildActivityTab()],
-      ),
+      body: _buildProfileContent(),
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _currentIndex,
         onTap: _onNavBarTap,
@@ -238,7 +216,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildProfileTab() {
+  Widget _buildProfileContent() {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
     
@@ -490,89 +468,8 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildActivityTab() {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
-    
-    return ListView(
-      padding: const EdgeInsets.all(16.0),
-      children: [
-        Text(
-          "Recent Activity",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: colorScheme.onSurface,
-          ),
-        ),
-        const SizedBox(height: 16),
-        _buildActivityItem(
-          "Completed Workout",
-          "Upper Body Strength",
-          "Today, 9:30 AM",
-          Icons.fitness_center,
-          Colors.blue,
-        ),
-        _buildActivityItem(
-          "Tracked Meal",
-          "Lunch - 650 calories",
-          "Today, 12:15 PM",
-          Icons.restaurant,
-          Colors.orange,
-        ),
-        _buildActivityItem(
-          "Achieved Badge",
-          "10 Day Streak",
-          "Yesterday",
-          Icons.emoji_events,
-          Colors.amber,
-        ),
-        _buildActivityItem(
-          "Completed Workout",
-          "Morning Run - 5km",
-          "Yesterday, 7:45 AM",
-          Icons.directions_run,
-          Colors.green,
-        ),
-        _buildActivityItem(
-          "Updated Weight",
-          "75.5 kg",
-          "2 days ago",
-          Icons.monitor_weight,
-          Colors.purple,
-        ),
-        _buildActivityItem(
-          "Completed Workout",
-          "Full Body HIIT",
-          "3 days ago",
-          Icons.fitness_center,
-          Colors.blue,
-        ),
-        _buildActivityItem(
-          "Added Friend",
-          "Connected with Jane",
-          "3 days ago",
-          Icons.person_add,
-          Colors.teal,
-        ),
-        Center(
-          child: TextButton(
-            onPressed: () {
-              // View more activity
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: colorScheme.primary,
-            ),
-            child: const Text("View More Activity"),
-          ),
-        ),
-      ],
-    );
-  }
-
   // Helper UI Builders
   Widget _buildProfileTile(IconData icon, String title, String value) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final colorScheme = Theme.of(context).colorScheme;
     
     return ListTile(
@@ -650,68 +547,6 @@ class _ProfileScreenState extends State<ProfileScreen>
               textAlign: TextAlign.center,
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActivityItem(
-    String title,
-    String subtitle,
-    String time,
-    IconData icon,
-    Color color,
-  ) {
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final colorScheme = Theme.of(context).colorScheme;
-    
-    // Adjust color brightness for dark mode
-    Color adaptedColor = isDarkMode
-        ? color.withOpacity(0.8) // Slightly dimmed for dark mode
-        : color;
-        
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 1,
-      color: colorScheme.surface,
-      shadowColor: isDarkMode ? Colors.black : Colors.grey[300],
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
-          color: isDarkMode
-              ? colorScheme.onSurface.withOpacity(0.1)
-              : Colors.transparent,
-          width: 1,
-        ),
-      ),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: adaptedColor.withOpacity(0.2),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: adaptedColor),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            color: colorScheme.onSurface.withOpacity(0.7),
-          ),
-        ),
-        trailing: Text(
-          time,
-          style: TextStyle(
-            color: colorScheme.onSurface.withOpacity(0.5),
-            fontSize: 12,
-          ),
         ),
       ),
     );

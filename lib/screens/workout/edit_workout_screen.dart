@@ -287,7 +287,7 @@ class _EditWorkoutScreenState extends State<EditWorkoutScreen> {
     final isDarkMode = theme.brightness == Brightness.dark;
     final textFieldBgColor = isDarkMode 
         ? Colors.grey.shade800 
-        : theme.colorScheme.surfaceVariant;
+        : theme.colorScheme.surfaceContainerHighest;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
